@@ -1,0 +1,294 @@
+// Data model, factories and reference taxonomies for the investigation domain.
+
+export const uid = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+
+export const SEVERITIES = ['Critical', 'High', 'Medium', 'Low'];
+
+export const SEVERITY_COLOR = {
+  Critical: 'var(--sev-critical)',
+  High: 'var(--sev-high)',
+  Medium: 'var(--sev-medium)',
+  Low: 'var(--sev-low)',
+};
+
+export const INCIDENT_TYPES = [
+  'Injury',
+  'Near miss',
+  'Property damage',
+  'Environmental',
+  'Process safety',
+  'Security',
+  'Other',
+];
+
+export const EVIDENCE_TYPES = [
+  'Photo',
+  'Document',
+  'Witness account',
+  'Physical',
+  'Data / records',
+];
+
+// ICAM contributing-factor categories, in causal-chain order:
+// Organisational Factors → Task/Environmental Conditions →
+// Individual/Team Actions → Absent/Failed Defences → Incident
+export const ICAM_ORDER = ['of', 'tec', 'ita', 'afd'];
+
+export const ICAM_KINDS = {
+  of: {
+    label: 'Organisational Factors',
+    short: 'OF',
+    color: '#6d5a8e',
+    hint: 'Underlying organisational causes — training, leadership, culture, resourcing, change management',
+    ratings: [
+      'Training',
+      'Leadership',
+      'Culture',
+      'Resourcing',
+      'Procedures & standards',
+      'Change management',
+      'Contractor management',
+      'Other',
+    ],
+    ratingLabel: 'Factor type',
+  },
+  tec: {
+    label: 'Task / Environmental Conditions',
+    short: 'TEC',
+    color: '#44607a',
+    hint: 'Workplace conditions that promoted the actions or weakened defences',
+    ratings: [
+      'Workload',
+      'Procedures',
+      'Equipment',
+      'Environment',
+      'Time pressure',
+      'Communication',
+      'Other',
+    ],
+    ratingLabel: 'Condition type',
+  },
+  ita: {
+    label: 'Individual / Team Actions',
+    short: 'ITA',
+    color: '#c06b1c',
+    hint: 'Errors or violations by individuals or teams that led directly to the incident',
+    ratings: ['Slip', 'Lapse', 'Mistake', 'Violation'],
+    ratingLabel: 'Error type',
+  },
+  afd: {
+    label: 'Absent / Failed Defences',
+    short: 'AFD',
+    color: '#a93315',
+    hint: 'Barriers that should have prevented the incident or limited its consequences',
+    ratings: ['Absent', 'Failed', 'Weakened', 'Held'],
+    ratingLabel: 'Barrier state',
+  },
+};
+
+// mini-HFAT — simplified human-factors analysis of an individual/team action
+export const HFAT_ERROR_TYPES = ['Slip', 'Lapse', 'Mistake', 'Violation'];
+
+export const HFAT_COGNITIVE_STAGES = [
+  { stage: 'Perception', hint: 'Were the relevant cues noticed?' },
+  { stage: 'Interpretation', hint: 'Was the situation correctly understood?' },
+  { stage: 'Decision', hint: 'Was an appropriate course of action chosen?' },
+  { stage: 'Action', hint: 'Was the chosen action executed as intended?' },
+];
+
+export const HFAT_FINDINGS = ['Adequate', 'Partial', 'Inadequate'];
+
+export const HFAT_CONDITIONS = [
+  'Fatigue & alertness',
+  'Time pressure',
+  'Workload & distraction',
+  'Competence & familiarity',
+  'Communication',
+  'Procedures & documentation',
+  'Environment & workplace',
+  'Equipment & interface',
+];
+
+export const HFAT_LEVELS = ['High', 'Medium', 'Low'];
+
+// Corrective actions — hierarchy of control
+export const ACTION_HIERARCHY = [
+  'Elimination',
+  'Substitution',
+  'Engineering control',
+  'Administrative control',
+  'PPE',
+];
+
+export const ACTION_STATUS = ['Proposed', 'Approved', 'In progress', 'Complete'];
+
+// Cognitive-interview structure
+export const INTERVIEW_PHASES = [
+  {
+    key: 'rapport',
+    label: 'Rapport & purpose',
+    hint: 'Put the interviewee at ease. Explain this is about learning, not blame.',
+  },
+  {
+    key: 'freeRecall',
+    label: 'Free recall',
+    hint: 'Ask for an uninterrupted account in their own words. Do not interrupt or correct.',
+  },
+  {
+    key: 'probing',
+    label: 'Open probing',
+    hint: 'Open questions only — what, how, when, who. Avoid leading or "why didn\'t you…" questions.',
+  },
+  {
+    key: 'clarify',
+    label: 'Clarify & summarise',
+    hint: 'Play back what you heard and let them correct or add detail.',
+  },
+  {
+    key: 'close',
+    label: 'Close & next steps',
+    hint: 'Thank them, explain what happens next, and how to reach you with anything they remember later.',
+  },
+];
+
+// ── factories ────────────────────────────────────────────────
+
+const nextRef = (cases) => {
+  const year = new Date().getFullYear();
+  const nums = (cases || [])
+    .map((c) => /^INV-(\d{4})-(\d+)$/.exec(c.ref))
+    .filter((m) => m && Number(m[1]) === year)
+    .map((m) => Number(m[2]));
+  const n = nums.length ? Math.max(...nums) + 1 : 1;
+  return `INV-${year}-${String(n).padStart(3, '0')}`;
+};
+
+export const newInvestigation = (title, cases) => {
+  const now = new Date().toISOString();
+  return {
+    id: uid(),
+    schema: 1,
+    ref: nextRef(cases),
+    title: title.trim(),
+    status: 'Open',
+    createdAt: now,
+    updatedAt: now,
+    details: {
+      occurredOn: '',
+      occurredTime: '',
+      location: '',
+      site: '',
+      reportedBy: '',
+      lead: '',
+      severity: '',
+      type: '',
+      description: '',
+      immediateActions: '',
+    },
+    evidence: [],
+    interviews: [],
+    timeline: [],
+    fiveWhys: { problem: '', whys: [], rootCause: '' },
+    icam: { of: [], tec: [], ita: [], afd: [] },
+    hfat: [],
+    actions: [],
+    report: {
+      summary: '',
+      keyFindings: '',
+      conclusions: '',
+      preparedBy: '',
+      approvedBy: '',
+    },
+  };
+};
+
+export const nextEvidenceRef = (evidence) => {
+  const nums = (evidence || [])
+    .map((e) => /^E(\d+)$/.exec(e.ref))
+    .filter(Boolean)
+    .map((m) => Number(m[1]));
+  return `E${nums.length ? Math.max(...nums) + 1 : 1}`;
+};
+
+export const newEvidence = (evidence) => ({
+  id: uid(),
+  ref: nextEvidenceRef(evidence),
+  type: 'Document',
+  title: '',
+  description: '',
+  source: '',
+  collectedOn: '',
+});
+
+export const newInterview = () => ({
+  id: uid(),
+  interviewee: '',
+  role: '',
+  interviewer: '',
+  conductedOn: '',
+  notes: { rapport: '', freeRecall: '', probing: '', clarify: '', close: '' },
+  keyPoints: '',
+});
+
+export const newTimelineEntry = () => ({
+  id: uid(),
+  date: '',
+  time: '',
+  text: '',
+  evidenceIds: [],
+});
+
+export const newWhy = () => ({ id: uid(), answer: '', evidenceIds: [] });
+
+export const newIcamFactor = (kind) => ({
+  id: uid(),
+  kind,
+  text: '',
+  rating: '',
+  evidenceIds: [],
+  notes: '',
+});
+
+export const newHfatEntry = () => ({
+  id: uid(),
+  itaId: '',
+  actionError: { type: '', actor: '', description: '' },
+  recovery: { opportunity: '', barrier: '', outcome: '' },
+  cognition: HFAT_COGNITIVE_STAGES.map(({ stage }) => ({
+    stage,
+    finding: '',
+    note: '',
+  })),
+  conditions: [],
+  summary: '',
+});
+
+export const newAction = () => ({
+  id: uid(),
+  title: '',
+  detail: '',
+  owner: '',
+  due: '',
+  hierarchy: '',
+  status: 'Proposed',
+  factorIds: [],
+});
+
+// ── small helpers shared across steps ────────────────────────
+
+export const fmtDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+export const allIcamFactors = (inv) =>
+  ICAM_ORDER.flatMap((k) => inv.icam[k].map((f) => ({ ...f, kind: k })));

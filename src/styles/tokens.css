@@ -1,0 +1,53 @@
+/* ─────────────────────────────────────────────────────────────
+   Incident Portal — design tokens
+   Direction: "investigation dossier" — calm, paper-like,
+   editorial-utilitarian, refined minimalism. Light theme only.
+   Spacing rhythm: multiples of 4px (4 8 12 16 20 24 32 40 56).
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* surfaces */
+  --paper: #f6f4ef;
+  --surface: #ffffff;
+  --sunken: #efece5;
+
+  /* ink */
+  --ink: #1f1c18;
+  --ink-2: #57514a;
+  --ink-3: #8b8378;
+
+  /* lines */
+  --line: #e3dfd6;
+  --line-strong: #cfc9bd;
+
+  /* accent — oxide red. Primary actions & critical emphasis ONLY. */
+  --accent: #b5431d;
+  --accent-hover: #9e3917;
+  --accent-tint: #f7e8e2;
+
+  /* secondary */
+  --steel: #44607a;
+  --steel-tint: #e8edf2;
+  --ok: #4f7a5b;
+  --ok-tint: #e7efe9;
+  --warn: #b98a1f;
+  --warn-tint: #f6efdc;
+
+  /* severity scale */
+  --sev-critical: #a93315;
+  --sev-high: #c06b1c;
+  --sev-medium: #a8901f;
+  --sev-low: #6e7f62;
+
+  /* shape */
+  --radius: 8px;
+  --radius-sm: 5px;
+
+  /* type */
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Archivo Variable', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* elevation — modals only; cards use hairline borders */
+  --shadow-modal: 0 18px 50px rgba(31, 28, 24, 0.18);
+  --shadow-pop: 0 6px 24px rgba(31, 28, 24, 0.12);
+}
