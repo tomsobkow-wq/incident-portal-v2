@@ -265,7 +265,7 @@
   z-index: 5;
 }
 .content-inner {
-  max-width: 860px;
+  max-width: 1240px;
   margin: 0 auto;
 }
 .step-foot {
@@ -1086,6 +1086,9 @@
   padding: 48px 56px;
   font-size: 13.5px;
   line-height: 1.6;
+  /* the document keeps a readable measure even in the wide workspace */
+  max-width: 920px;
+  margin: 0 auto;
 }
 .report-doc .r-overline {
   font-family: var(--font-mono);

@@ -242,28 +242,36 @@ export const InterviewsStep = ({ inv, update }) => {
                   onClick={() => setToDelete(iv)}
                 />
               </div>
-              {iv.questions.filter((q) => q.question.trim() || q.answer.trim()).length > 0 && (
-                <div className="qa-display" style={{ marginTop: 10 }}>
-                  {iv.questions
-                    .filter((q) => q.question.trim() || q.answer.trim())
-                    .map((q) => (
-                      <div key={q.id}>
-                        <div className="q">Q · {q.question || '—'}</div>
-                        <div className="a">{q.answer || 'No response recorded.'}</div>
-                      </div>
-                    ))}
-                </div>
-              )}
-              {iv.keyPoints && <div className="iv-points">{iv.keyPoints}</div>}
-              <div style={{ marginTop: 10 }}>
-                <Button
-                  size="sm"
-                  icon="link"
-                  disabled={isInEvidence(iv)}
-                  onClick={() => saveAsEvidence(iv)}
-                >
-                  {isInEvidence(iv) ? 'In evidence log' : 'Add to evidence log'}
-                </Button>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: 'var(--ink-3)',
+                }}
+              >
+                {iv.interviewer && <span>Interviewer: {iv.interviewer}</span>}
+                <span>
+                  {iv.questions.filter((q) => q.question.trim() || q.answer.trim()).length}{' '}
+                  question
+                  {iv.questions.filter((q) => q.question.trim() || q.answer.trim()).length === 1
+                    ? ''
+                    : 's'}{' '}
+                  recorded
+                </span>
+                {iv.keyPoints.trim() && <span>Key points noted</span>}
+                <span style={{ marginLeft: 'auto', display: 'flex' }}>
+                  <Button
+                    size="sm"
+                    icon="link"
+                    disabled={isInEvidence(iv)}
+                    onClick={() => saveAsEvidence(iv)}
+                  >
+                    {isInEvidence(iv) ? 'In evidence log' : 'Add to evidence log'}
+                  </Button>
+                </span>
               </div>
             </div>
           ))}
