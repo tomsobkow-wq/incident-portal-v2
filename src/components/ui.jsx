@@ -65,6 +65,14 @@ const PATHS = {
   ),
   folder: <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />,
   arrowDown: <path d="M12 5v14M19 12l-7 7-7-7" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9.2a2.8 2.8 0 0 1 5.5.7c0 1.8-2.7 2.2-2.7 3.8" />
+      <circle cx="12" cy="17" r="0.6" fill="currentColor" />
+    </>
+  ),
+  upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />,
 };
 
 export const Icon = ({ name, size = 14 }) => (
@@ -171,6 +179,25 @@ export const Segmented = ({ value, onChange, options, colorFor }) => (
       </button>
     ))}
   </div>
+);
+
+// ── hover help ───────────────────────────────────────────────
+// First line is the "what we're after" summary; the rest render as prompts.
+export const HelpTip = ({ title, lines }) => (
+  <span className="helptip" tabIndex={0} aria-label={`Help: ${title}`}>
+    <Icon name="help" size={13} />
+    <span className="helptip-pop" role="tooltip">
+      <strong>{title}</strong>
+      <p>{lines[0]}</p>
+      {lines.length > 1 && (
+        <ul>
+          {lines.slice(1).map((l, i) => (
+            <li key={i}>{l}</li>
+          ))}
+        </ul>
+      )}
+    </span>
+  </span>
 );
 
 // ── tag ──────────────────────────────────────────────────────

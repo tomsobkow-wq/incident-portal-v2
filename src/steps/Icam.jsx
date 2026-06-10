@@ -14,6 +14,7 @@ import {
   EvidenceChips,
   EvidencePicker,
   Field,
+  HelpTip,
   Icon,
   IconButton,
   Modal,
@@ -24,10 +25,16 @@ import {
 } from '../components/ui.jsx';
 import { useCases } from '../App.jsx';
 
-const PeepoModal = ({ inv, initial, onSave, onDelete, onClose }) => {
+const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => {
   const [draft, setDraft] = useState(initial);
+  const [transferKind, setTransferKind] = useState('');
   const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
   const isNew = !inv.peepo.some((p) => p.id === initial.id);
+  const transferred =
+    draft.factorId &&
+    Object.values(inv.icam).some((list) => list.some((f) => f.id === draft.factorId));
+  const kindByLabel = (label) =>
+    ICAM_ORDER.find((k) => ICAM_KINDS[k].label === label) || '';
   return (
     <Modal
       title={`PEEPO — ${draft.category}`}
@@ -88,6 +95,35 @@ const PeepoModal = ({ inv, initial, onSave, onDelete, onClose }) => {
           rows={2}
           placeholder="Outcome of exploring this — feeds the factor analysis below."
         />
+      </Field>
+      <Field
+        label="Transfer to the ICAM factor table"
+        hint="Apply the contribution test first: would the incident have been prevented, or been less severe, if this had been different? Only then does a finding become a contributing factor — facts that don't pass stay here as context."
+      >
+        {transferred ? (
+          <div>
+            <Tag tone="ok">In the ICAM factor table</Tag>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Select
+              value={transferKind ? ICAM_KINDS[transferKind].label : ''}
+              onChange={(label) => setTransferKind(kindByLabel(label))}
+              options={ICAM_ORDER.map((k) => ICAM_KINDS[k].label)}
+              placeholder="Passes the test as a…"
+              aria-label="Factor category"
+            />
+            <Button
+              variant="subtle"
+              disabled={!transferKind || !(draft.notes.trim() || draft.text.trim())}
+              onClick={() => onTransfer(draft, transferKind)}
+              style={{ flex: 'none' }}
+            >
+              <Icon name="link" size={12} />
+              Transfer
+            </Button>
+          </div>
+        )}
       </Field>
     </Modal>
   );
@@ -170,6 +206,26 @@ export const IcamStep = ({ inv, update }) => {
     setPeepoEditing(null);
   };
 
+  // A PEEPO finding that passes the contribution test becomes an ICAM factor,
+  // carrying its evidence links with it.
+  const transferPeepo = (item, kind) => {
+    const factor = {
+      ...newIcamFactor(kind),
+      text: item.notes.trim() || item.text.trim(),
+      evidenceIds: [...item.evidenceIds],
+      notes: `From PEEPO (${item.category}): ${item.text}`,
+    };
+    const updated = { ...item, status: 'Explored', factorId: factor.id };
+    update((c) => ({
+      ...c,
+      icam: { ...c.icam, [kind]: [...c.icam[kind], factor] },
+      peepo: c.peepo.some((p) => p.id === item.id)
+        ? c.peepo.map((p) => (p.id === item.id ? updated : p))
+        : [...c.peepo, updated],
+    }));
+    setPeepoEditing(null);
+  };
+
   const save = (item) => {
     update((c) => {
       const list = c.icam[item.kind];
@@ -199,6 +255,9 @@ export const IcamStep = ({ inv, update }) => {
         ...a,
         factorIds: a.factorIds.filter((x) => x !== factor.id),
       })),
+      peepo: c.peepo.map((p) =>
+        p.factorId === factor.id ? { ...p, factorId: '' } : p
+      ),
     }));
 
   const analyseInHfat = (factor) => {
@@ -236,15 +295,17 @@ export const IcamStep = ({ inv, update }) => {
             <div className="p-title">PEEPO brainstorm</div>
             <div className="p-hint">
               Ideas to explore and where the evidence sits — amber items still need
-              exploring, green are done. Click an item to record what was found.
+              exploring, green are done. Findings that pass the contribution test
+              transfer to the factor table below; the rest stay here as context.
             </div>
           </div>
         </div>
         <div className="peepo-grid">
           {PEEPO_CATEGORIES.map((cat) => (
             <div key={cat.key} className="peepo-col">
-              <div className="pc-name" title={cat.hint}>
+              <div className="pc-name" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 {cat.key}
+                <HelpTip title={cat.key} lines={cat.help} />
               </div>
               {inv.peepo
                 .filter((p) => p.category === cat.key)
@@ -258,6 +319,7 @@ export const IcamStep = ({ inv, update }) => {
                     {p.text}
                     <span className="pi-meta">
                       {p.status === 'To explore' && <Tag tone="warn">To explore</Tag>}
+                      {p.factorId && <Tag tone="steel">In ICAM</Tag>}
                       <EvidenceChips inv={inv} ids={p.evidenceIds} />
                     </span>
                   </button>
@@ -289,7 +351,10 @@ export const IcamStep = ({ inv, update }) => {
                     {kind.short}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <div className="b-label">{kind.label}</div>
+                    <div className="b-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {kind.label}
+                      <HelpTip title={kind.label} lines={kind.help} />
+                    </div>
                     <div className="b-hint">{kind.hint}</div>
                   </div>
                   <Button
@@ -348,6 +413,7 @@ export const IcamStep = ({ inv, update }) => {
           initial={peepoEditing}
           onSave={savePeepo}
           onDelete={deletePeepo}
+          onTransfer={transferPeepo}
           onClose={() => setPeepoEditing(null)}
         />
       )}

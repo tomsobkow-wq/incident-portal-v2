@@ -172,6 +172,23 @@ export const ReportStep = ({ inv, update }) => {
                     {e.description && (
                       <span className="muted"> — {e.description}</span>
                     )}
+                    {e.file?.type?.startsWith('image/') && (
+                      <img
+                        src={e.file.dataUrl}
+                        alt={e.title}
+                        style={{
+                          display: 'block',
+                          maxWidth: 220,
+                          maxHeight: 140,
+                          marginTop: 6,
+                          borderRadius: 4,
+                          border: '1px solid var(--line)',
+                        }}
+                      />
+                    )}
+                    {e.file && !e.file.type?.startsWith('image/') && (
+                      <span className="muted"> (file: {e.file.name})</span>
+                    )}
                   </td>
                   <td>{e.source || '—'}</td>
                 </tr>

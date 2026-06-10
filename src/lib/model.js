@@ -43,6 +43,13 @@ export const ICAM_KINDS = {
     short: 'OF',
     color: '#6d5a8e',
     hint: 'Underlying organisational causes — training, leadership, culture, resourcing, change management',
+    help: [
+      'What we are after: decisions and conditions set by the organisation, long before the day of the incident, that shaped everything below.',
+      'Was the work planned and resourced realistically?',
+      'Did training and supervision actually cover this task?',
+      'Were changes (layout, equipment, staffing) risk-assessed?',
+      'These are where recurrence is prevented — every OF should end up with a corrective action.',
+    ],
     ratings: [
       'Training',
       'Leadership',
@@ -60,6 +67,13 @@ export const ICAM_KINDS = {
     short: 'TEC',
     color: '#44607a',
     hint: 'Workplace conditions that promoted the actions or weakened defences',
+    help: [
+      'What we are after: the state of the task and workplace at the time — the context that made the actions below more likely.',
+      'Time pressure, workload, distraction, fatigue?',
+      'Lighting, noise, weather, housekeeping, layout?',
+      'Procedures unclear, out of date or impractical? Equipment defective?',
+      'Every individual/team action should have at least one condition explaining it.',
+    ],
     ratings: [
       'Workload',
       'Procedures',
@@ -76,6 +90,13 @@ export const ICAM_KINDS = {
     short: 'ITA',
     color: '#c06b1c',
     hint: 'Errors or violations by individuals or teams that led directly to the incident',
+    help: [
+      'What we are after: what people did or did not do that led directly to the event — described factually, by role not name.',
+      'Slip/lapse: right intention, action went wrong or was forgotten.',
+      'Mistake: the plan itself was wrong.',
+      'Violation: deliberate deviation — ask whether it was routine and tolerated.',
+      'ITAs are the starting point of analysis, never the stopping point — keep asking what made them likely.',
+    ],
     ratings: ['Slip', 'Lapse', 'Mistake', 'Violation'],
     ratingLabel: 'Error type',
   },
@@ -84,6 +105,13 @@ export const ICAM_KINDS = {
     short: 'AFD',
     color: '#a93315',
     hint: 'Barriers that should have prevented the incident or limited its consequences',
+    help: [
+      'What we are after: the last lines of defence that should have stopped the event or reduced its harm — and why they did not.',
+      'Detection: alarms, inspections, supervision?',
+      'Protection: guards, barriers, PPE, exclusion zones?',
+      'Recovery: emergency response, isolation, escape?',
+      'For each, was it absent (never there), failed (there but did not work), or weakened (degraded, bypassed)?',
+    ],
     ratings: ['Absent', 'Failed', 'Weakened', 'Held'],
     ratingLabel: 'Barrier state',
   },
@@ -135,11 +163,56 @@ export const METHODS = [
 // PEEPO — brainstorming lens inside ICAM: lines of enquiry + where the
 // evidence sits across People / Environment / Equipment / Procedures / Organisation
 export const PEEPO_CATEGORIES = [
-  { key: 'People', hint: 'Who was involved, supervising, nearby? Competence, fatigue, communication.' },
-  { key: 'Environment', hint: 'Lighting, weather, noise, housekeeping, layout, time of day.' },
-  { key: 'Equipment', hint: 'Plant, tools, materials, interfaces, maintenance state.' },
-  { key: 'Procedures', hint: 'Rules, permits, SOPs — did they exist, fit the task, get followed?' },
-  { key: 'Organisation', hint: 'Planning, resourcing, training, change management, culture.' },
+  {
+    key: 'People',
+    hint: 'Who was involved, supervising, nearby? Competence, fatigue, communication.',
+    help: [
+      'What we are after: everyone whose actions, decisions or absence mattered — by role, not blame.',
+      'Who was doing the task, supervising, working nearby?',
+      'Were they trained, experienced, fit for work (fatigue, stress)?',
+      'Who has not been spoken to yet?',
+    ],
+  },
+  {
+    key: 'Environment',
+    hint: 'Lighting, weather, noise, housekeeping, layout, time of day.',
+    help: [
+      'What we are after: the physical surroundings at the moment of the event.',
+      'Lighting, weather, temperature, noise, visibility?',
+      'Housekeeping, access routes, layout, congestion?',
+      'What did the scene look like before anything was moved?',
+    ],
+  },
+  {
+    key: 'Equipment',
+    hint: 'Plant, tools, materials, interfaces, maintenance state.',
+    help: [
+      'What we are after: every piece of plant, tool or material involved.',
+      'Was it the right equipment, in good condition, maintained on schedule?',
+      'Any alarms, guards or interlocks — did they work?',
+      'Where are the maintenance and inspection records?',
+    ],
+  },
+  {
+    key: 'Procedures',
+    hint: 'Rules, permits, SOPs — did they exist, fit the task, get followed?',
+    help: [
+      'What we are after: the rules the task was supposed to run under.',
+      'Did a procedure exist, and did it match how the job is really done?',
+      'Permits, risk assessments, toolbox talks — completed and current?',
+      'If practice differed from paper, since when, and who knew?',
+    ],
+  },
+  {
+    key: 'Organisation',
+    hint: 'Planning, resourcing, training, change management, culture.',
+    help: [
+      'What we are after: how the organisation set this work up to succeed or fail.',
+      'Planning, scheduling and resourcing of the task?',
+      'Training programmes, supervision arrangements, contractor management?',
+      'Recent changes — and whether anyone re-assessed the risk after them.',
+    ],
+  },
 ];
 
 export const PEEPO_STATUS = ['To explore', 'Explored'];
@@ -242,6 +315,7 @@ export const newEvidence = (evidence) => ({
   description: '',
   source: '',
   collectedOn: '',
+  file: null, // { name, type, size, dataUrl } — stored in the browser
 });
 
 export const newInterview = () => ({
@@ -273,6 +347,7 @@ export const newPeepoItem = (category) => ({
   status: 'To explore',
   evidenceIds: [],
   notes: '',
+  factorId: '', // set when transferred to the ICAM factor table
 });
 
 export const newWhy = () => ({ id: uid(), answer: '', evidenceIds: [] });
@@ -328,7 +403,8 @@ export const fmtDate = (iso) => {
 export const migrateCase = (c) => ({
   ...c,
   methods: c.methods || { fiveWhys: true, icam: true, hfat: true },
-  peepo: c.peepo || [],
+  peepo: (c.peepo || []).map((p) => ({ factorId: '', ...p })),
+  evidence: (c.evidence || []).map((e) => ({ file: null, ...e })),
   timeline: (c.timeline || []).map((t) => ({ actor: '', ...t })),
   interviews: (c.interviews || []).map((iv) => ({
     ...iv,

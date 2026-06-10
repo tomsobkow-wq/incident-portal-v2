@@ -164,7 +164,9 @@ export const exportDocx = async (inv) => {
           inv.evidence.map((e) => [
             e.ref,
             e.type,
-            e.description ? `${e.title} — ${e.description}` : e.title,
+            `${e.description ? `${e.title} — ${e.description}` : e.title}${
+              e.file ? ` (file: ${e.file.name})` : ''
+            }`,
             e.source,
           ])
         )
