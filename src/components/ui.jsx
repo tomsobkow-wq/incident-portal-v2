@@ -254,7 +254,7 @@ export const ConfirmDialog = ({
 
 // ── empty state ──────────────────────────────────────────────
 export const EmptyState = ({ icon, title, hint, action }) => (
-  <div className="empty">
+  <div className="empty-state">
     {icon && <Icon name={icon} size={22} />}
     <div className="e-title">{title}</div>
     {hint && <div className="e-hint">{hint}</div>}

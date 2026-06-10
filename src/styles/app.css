@@ -147,6 +147,40 @@
   gap: 8px;
   margin-top: 9px;
 }
+.rail-methods {
+  padding: 12px 8px 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.method-toggles {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.method-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.method-chip:hover {
+  border-color: var(--ink-3);
+}
+.method-chip.on {
+  background: var(--steel-tint);
+  border-color: var(--steel);
+  color: var(--steel);
+}
+
 .rail-steps {
   display: flex;
   flex-direction: column;
@@ -416,6 +450,32 @@
   background: var(--paper);
   flex: none;
 }
+/* parallel events at the same moment sit side by side */
+.tl-parallel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.tl-actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--steel);
+}
+.tl-parallel-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+
 .tl-entry .tl-body {
   padding: 10px 14px;
   background: var(--surface);
@@ -513,6 +573,129 @@
 }
 .fw-root .overline {
   color: var(--accent);
+}
+
+/* ── interview Q&A ─────────────────────────────────────────── */
+.qa-row {
+  display: grid;
+  grid-template-columns: 1fr 28px;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+.qa-row + .qa-row {
+  margin-top: 8px;
+}
+.qa-row .q-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qa-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.qa-display .q {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.qa-display .a {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 2px 0 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line-strong);
+  white-space: pre-wrap;
+}
+
+/* ── PEEPO board ───────────────────────────────────────────── */
+.peepo-board {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.peepo-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+}
+.peepo-head .p-title {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.peepo-head .p-hint {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.peepo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+}
+.peepo-col {
+  padding: 10px;
+  border-right: 1px solid var(--line);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.peepo-col:last-child {
+  border-right: none;
+}
+.peepo-col .pc-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-2);
+}
+.peepo-item {
+  text-align: left;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font-size: 12px;
+  line-height: 1.45;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.peepo-item:hover {
+  border-color: var(--line-strong);
+}
+.peepo-item.explored {
+  border-left: 3px solid var(--ok);
+}
+.peepo-item.to-explore {
+  border-left: 3px solid var(--warn);
+}
+.peepo-item .pi-meta {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .peepo-grid {
+    grid-template-columns: 1fr;
+  }
+  .peepo-col {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
 }
 
 /* ── ICAM ──────────────────────────────────────────────────── */

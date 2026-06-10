@@ -1,5 +1,7 @@
 // localStorage persistence. One key holds every investigation.
 
+import { migrateCase } from './model.js';
+
 const KEY = 'incident-portal-v2';
 const ROUTE_KEY = 'incident-portal-v2:route';
 
@@ -9,7 +11,7 @@ export const loadState = () => {
     if (!raw) return { cases: [] };
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.cases)) return { cases: [] };
-    return parsed;
+    return { ...parsed, cases: parsed.cases.map(migrateCase) };
   } catch {
     return { cases: [] };
   }

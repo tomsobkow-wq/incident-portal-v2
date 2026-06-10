@@ -123,6 +123,10 @@ export const EvidenceStep = ({ inv, update }) => {
           })),
         ])
       ),
+      peepo: c.peepo.map((p) => ({
+        ...p,
+        evidenceIds: p.evidenceIds.filter((x) => x !== id),
+      })),
     }));
 
   return (

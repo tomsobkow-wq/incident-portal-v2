@@ -416,7 +416,7 @@ a {
 }
 
 /* ── empty state ───────────────────────────────────────────── */
-.empty {
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -427,17 +427,17 @@ a {
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius);
 }
-.empty .e-title {
+.empty-state .e-title {
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink-2);
 }
-.empty .e-hint {
+.empty-state .e-hint {
   font-size: 13px;
   max-width: 380px;
   line-height: 1.5;
 }
-.empty .btn {
+.empty-state .btn {
   margin-top: 8px;
 }
 

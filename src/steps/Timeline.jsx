@@ -8,6 +8,7 @@ import {
   EvidencePicker,
   Field,
   IconButton,
+  Input,
   Modal,
   SectionHeader,
   TextArea,
@@ -32,7 +33,7 @@ const TimelineModal = ({ inv, initial, onSave, onClose }) => {
         </>
       }
     >
-      <div className="grid-2">
+      <div className="grid-3">
         <Field label="Date">
           <input
             className="input"
@@ -49,8 +50,18 @@ const TimelineModal = ({ inv, initial, onSave, onClose }) => {
             onChange={(e) => set('time')(e.target.value)}
           />
         </Field>
+        <Field label="Actor / track">
+          <Input
+            value={draft.actor}
+            onChange={set('actor')}
+            placeholder="e.g. Operator, Control room"
+          />
+        </Field>
       </div>
-      <Field label="What happened at this point">
+      <Field
+        label="What happened at this point"
+        hint="Two entries with the same date and time appear side by side as parallel events — use Actor/track to say who or what each strand belongs to."
+      >
         <TextArea
           value={draft.text}
           onChange={set('text')}
@@ -71,6 +82,16 @@ export const TimelineStep = ({ inv, update }) => {
 
   const entries = [...inv.timeline].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
 
+  // Entries sharing the same date+time form one moment with parallel strands.
+  // Untimed entries never merge — without a time, "parallel" can't be claimed.
+  const moments = [];
+  for (const t of entries) {
+    const key = t.time ? `${t.date}|${t.time}` : `solo|${t.id}`;
+    const last = moments[moments.length - 1];
+    if (last && last.key === key) last.items.push(t);
+    else moments.push({ key, date: t.date, time: t.time, items: [t] });
+  }
+
   const save = (item) => {
     update((c) => {
       const exists = c.timeline.some((t) => t.id === item.id);
@@ -88,7 +109,7 @@ export const TimelineStep = ({ inv, update }) => {
     <section className="rise">
       <SectionHeader
         title="Timeline"
-        sub="Reconstruct the sequence of events. Anchor each entry to evidence — the gaps that remain are your interview questions."
+        sub="Reconstruct the sequence of events. Entries with the same time sit side by side as parallel strands — anchor each to evidence."
         actions={
           <Button variant="primary" icon="plus" onClick={() => setEditing(newTimelineEntry())}>
             Add entry
@@ -109,33 +130,41 @@ export const TimelineStep = ({ inv, update }) => {
         />
       ) : (
         <div className="tl">
-          {entries.map((t) => (
-            <div key={t.id} className="tl-entry">
+          {moments.map((m) => (
+            <div key={m.key + m.items[0].id} className="tl-entry">
               <div className="tl-when">
-                <div className="tl-time">{t.time || '—'}</div>
-                <div className="tl-date">{fmtDate(t.date)}</div>
+                <div className="tl-time">{m.time || '—'}</div>
+                <div className="tl-date">{fmtDate(m.date)}</div>
               </div>
               <div className="tl-axis">
                 <div className="tl-dot" />
               </div>
-              <div className="tl-body">
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                  <div className="tl-text" style={{ flex: 1 }}>
-                    {t.text}
+              <div className="tl-parallel">
+                {m.items.map((t) => (
+                  <div key={t.id} className="tl-body">
+                    {m.items.length > 1 && (
+                      <div className="tl-parallel-tag">In parallel</div>
+                    )}
+                    {t.actor && <div className="tl-actor">{t.actor}</div>}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <div className="tl-text" style={{ flex: 1 }}>
+                        {t.text}
+                      </div>
+                      <IconButton icon="pencil" label="Edit" onClick={() => setEditing(t)} />
+                      <IconButton
+                        icon="trash"
+                        label="Delete"
+                        danger
+                        onClick={() => setToDelete(t)}
+                      />
+                    </div>
+                    {t.evidenceIds.length > 0 && (
+                      <div className="tl-extra">
+                        <EvidenceChips inv={inv} ids={t.evidenceIds} />
+                      </div>
+                    )}
                   </div>
-                  <IconButton icon="pencil" label="Edit" onClick={() => setEditing(t)} />
-                  <IconButton
-                    icon="trash"
-                    label="Delete"
-                    danger
-                    onClick={() => setToDelete(t)}
-                  />
-                </div>
-                {t.evidenceIds.length > 0 && (
-                  <div className="tl-extra">
-                    <EvidenceChips inv={inv} ids={t.evidenceIds} />
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           ))}

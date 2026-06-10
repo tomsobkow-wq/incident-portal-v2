@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { fmtDate, INTERVIEW_PHASES, newInterview, newEvidence } from '../lib/model.js';
+import {
+  fmtDate,
+  INTERVIEW_PHASES,
+  newEvidence,
+  newInterview,
+  newQuestion,
+} from '../lib/model.js';
 import {
   Button,
   ConfirmDialog,
@@ -12,6 +18,47 @@ import {
   Tag,
   TextArea,
 } from '../components/ui.jsx';
+
+const QAEditor = ({ questions, onChange }) => {
+  const setQ = (id, patch) =>
+    onChange(questions.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  return (
+    <div>
+      {questions.map((q, i) => (
+        <div key={q.id} className="qa-row">
+          <div className="q-fields">
+            <div className="qa-label">Question {i + 1}</div>
+            <Input
+              value={q.question}
+              onChange={(v) => setQ(q.id, { question: v })}
+              placeholder="The question as asked — open, not leading"
+              aria-label={`Question ${i + 1}`}
+            />
+            <div className="qa-label">Response</div>
+            <TextArea
+              value={q.answer}
+              onChange={(v) => setQ(q.id, { answer: v })}
+              rows={2}
+              placeholder="Their response, as close to verbatim as possible"
+              aria-label={`Response ${i + 1}`}
+            />
+          </div>
+          <IconButton
+            icon="trash"
+            label={`Remove question ${i + 1}`}
+            danger
+            onClick={() => onChange(questions.filter((x) => x.id !== q.id))}
+          />
+        </div>
+      ))}
+      <div style={{ marginTop: 8 }}>
+        <Button size="sm" icon="plus" onClick={() => onChange([...questions, newQuestion()])}>
+          Add question
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const InterviewModal = ({ initial, onSave, onClose }) => {
   const [draft, setDraft] = useState(initial);
@@ -72,13 +119,22 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
                   — {p.hint}
                 </span>
               </div>
-              <TextArea
-                value={draft.notes[p.key]}
-                onChange={setNote(p.key)}
-                rows={p.key === 'freeRecall' ? 5 : 2}
-                placeholder={p.key === 'freeRecall' ? 'Their account, in their words…' : ''}
-                aria-label={p.label}
-              />
+              {p.key === 'probing' ? (
+                <div style={{ padding: 10, background: 'var(--surface)' }}>
+                  <QAEditor
+                    questions={draft.questions}
+                    onChange={(qs) => set('questions')(qs)}
+                  />
+                </div>
+              ) : (
+                <TextArea
+                  value={draft.notes[p.key]}
+                  onChange={setNote(p.key)}
+                  rows={p.key === 'freeRecall' ? 5 : 2}
+                  placeholder={p.key === 'freeRecall' ? 'Their account, in their words…' : ''}
+                  aria-label={p.label}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -186,6 +242,18 @@ export const InterviewsStep = ({ inv, update }) => {
                   onClick={() => setToDelete(iv)}
                 />
               </div>
+              {iv.questions.filter((q) => q.question.trim() || q.answer.trim()).length > 0 && (
+                <div className="qa-display" style={{ marginTop: 10 }}>
+                  {iv.questions
+                    .filter((q) => q.question.trim() || q.answer.trim())
+                    .map((q) => (
+                      <div key={q.id}>
+                        <div className="q">Q · {q.question || '—'}</div>
+                        <div className="a">{q.answer || 'No response recorded.'}</div>
+                      </div>
+                    ))}
+                </div>
+              )}
               {iv.keyPoints && <div className="iv-points">{iv.keyPoints}</div>}
               <div style={{ marginTop: 10 }}>
                 <Button

@@ -1,5 +1,6 @@
 import { useCases } from '../App.jsx';
-import { STEPS, stepStatus } from '../lib/progress.js';
+import { stepsFor, stepStatus } from '../lib/progress.js';
+import { METHODS } from '../lib/model.js';
 import { Button, Icon, Tag } from './ui.jsx';
 import { DetailsStep } from '../steps/Details.jsx';
 import { EvidenceStep } from '../steps/Evidence.jsx';
@@ -25,14 +26,23 @@ const STEP_VIEWS = {
 
 export const CaseShell = ({ inv }) => {
   const { goHome, goStep, route, updateCase } = useCases();
-  const step = STEP_VIEWS[route.step] ? route.step : 'details';
+  const steps = stepsFor(inv);
+  const step =
+    STEP_VIEWS[route.step] && steps.some((s) => s.key === route.step)
+      ? route.step
+      : 'details';
   const statuses = stepStatus(inv);
-  const idx = STEPS.findIndex((s) => s.key === step);
+  const idx = steps.findIndex((s) => s.key === step);
   const View = STEP_VIEWS[step];
 
   const update = (fn) => updateCase(inv.id, fn);
   const toggleStatus = () =>
     update((c) => ({ ...c, status: c.status === 'Open' ? 'Closed' : 'Open' }));
+  const toggleMethod = (key) =>
+    update((c) => ({
+      ...c,
+      methods: { ...c.methods, [key]: !c.methods[key] },
+    }));
 
   return (
     <div className="shell">
@@ -55,8 +65,27 @@ export const CaseShell = ({ inv }) => {
             </button>
           </div>
         </div>
+        <div className="rail-methods">
+          <div className="overline" style={{ fontSize: 10 }}>
+            Analysis tools
+          </div>
+          <div className="method-toggles">
+            {METHODS.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                className={`method-chip ${inv.methods[m.key] ? 'on' : ''}`}
+                aria-pressed={inv.methods[m.key]}
+                onClick={() => toggleMethod(m.key)}
+              >
+                {inv.methods[m.key] && <Icon name="check" size={10} />}
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="rail-steps">
-          {STEPS.map((s, i) => {
+          {steps.map((s, i) => {
             const st = statuses[s.key];
             return (
               <button
@@ -85,14 +114,14 @@ export const CaseShell = ({ inv }) => {
           <View key={inv.id + step} inv={inv} update={update} />
           <div className="step-foot no-print">
             {idx > 0 && (
-              <Button icon="chevronLeft" onClick={() => goStep(STEPS[idx - 1].key)}>
-                {STEPS[idx - 1].label}
+              <Button icon="chevronLeft" onClick={() => goStep(steps[idx - 1].key)}>
+                {steps[idx - 1].label}
               </Button>
             )}
             <div className="spacer" />
-            {idx < STEPS.length - 1 && (
-              <Button variant="primary" onClick={() => goStep(STEPS[idx + 1].key)}>
-                Continue to {STEPS[idx + 1].label}
+            {idx < steps.length - 1 && (
+              <Button variant="primary" onClick={() => goStep(steps[idx + 1].key)}>
+                Continue to {steps[idx + 1].label}
                 <Icon name="chevronRight" size={13} />
               </Button>
             )}

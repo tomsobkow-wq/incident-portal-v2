@@ -125,6 +125,25 @@ export const ACTION_HIERARCHY = [
 
 export const ACTION_STATUS = ['Proposed', 'Approved', 'In progress', 'Complete'];
 
+// Analysis methods — selectable per investigation
+export const METHODS = [
+  { key: 'fiveWhys', label: '5 Whys' },
+  { key: 'icam', label: 'ICAM' },
+  { key: 'hfat', label: 'mini-HFAT' },
+];
+
+// PEEPO — brainstorming lens inside ICAM: lines of enquiry + where the
+// evidence sits across People / Environment / Equipment / Procedures / Organisation
+export const PEEPO_CATEGORIES = [
+  { key: 'People', hint: 'Who was involved, supervising, nearby? Competence, fatigue, communication.' },
+  { key: 'Environment', hint: 'Lighting, weather, noise, housekeeping, layout, time of day.' },
+  { key: 'Equipment', hint: 'Plant, tools, materials, interfaces, maintenance state.' },
+  { key: 'Procedures', hint: 'Rules, permits, SOPs — did they exist, fit the task, get followed?' },
+  { key: 'Organisation', hint: 'Planning, resourcing, training, change management, culture.' },
+];
+
+export const PEEPO_STATUS = ['To explore', 'Explored'];
+
 // Cognitive-interview structure
 export const INTERVIEW_PHASES = [
   {
@@ -176,6 +195,7 @@ export const newInvestigation = (title, cases) => {
     status: 'Open',
     createdAt: now,
     updatedAt: now,
+    methods: { fiveWhys: true, icam: true, hfat: true },
     details: {
       occurredOn: '',
       occurredTime: '',
@@ -192,6 +212,7 @@ export const newInvestigation = (title, cases) => {
     interviews: [],
     timeline: [],
     fiveWhys: { problem: '', whys: [], rootCause: '' },
+    peepo: [],
     icam: { of: [], tec: [], ita: [], afd: [] },
     hfat: [],
     actions: [],
@@ -230,15 +251,28 @@ export const newInterview = () => ({
   interviewer: '',
   conductedOn: '',
   notes: { rapport: '', freeRecall: '', probing: '', clarify: '', close: '' },
+  questions: [],
   keyPoints: '',
 });
+
+export const newQuestion = () => ({ id: uid(), question: '', answer: '' });
 
 export const newTimelineEntry = () => ({
   id: uid(),
   date: '',
   time: '',
+  actor: '',
   text: '',
   evidenceIds: [],
+});
+
+export const newPeepoItem = (category) => ({
+  id: uid(),
+  category,
+  text: '',
+  status: 'To explore',
+  evidenceIds: [],
+  notes: '',
 });
 
 export const newWhy = () => ({ id: uid(), answer: '', evidenceIds: [] });
@@ -289,6 +323,22 @@ export const fmtDate = (iso) => {
     year: 'numeric',
   });
 };
+
+// Bring investigations saved by older versions up to the current shape.
+export const migrateCase = (c) => ({
+  ...c,
+  methods: c.methods || { fiveWhys: true, icam: true, hfat: true },
+  peepo: c.peepo || [],
+  timeline: (c.timeline || []).map((t) => ({ actor: '', ...t })),
+  interviews: (c.interviews || []).map((iv) => ({
+    ...iv,
+    questions:
+      iv.questions ||
+      (iv.notes?.probing?.trim()
+        ? [{ id: uid(), question: 'Probing notes (pre-update)', answer: iv.notes.probing }]
+        : []),
+  })),
+});
 
 export const allIcamFactors = (inv) =>
   ICAM_ORDER.flatMap((k) => inv.icam[k].map((f) => ({ ...f, kind: k })));

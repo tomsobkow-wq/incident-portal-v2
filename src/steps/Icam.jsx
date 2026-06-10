@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { ICAM_KINDS, ICAM_ORDER, newHfatEntry, newIcamFactor } from '../lib/model.js';
+import {
+  ICAM_KINDS,
+  ICAM_ORDER,
+  newHfatEntry,
+  newIcamFactor,
+  newPeepoItem,
+  PEEPO_CATEGORIES,
+  PEEPO_STATUS,
+} from '../lib/model.js';
 import {
   Button,
   ConfirmDialog,
   EvidenceChips,
   EvidencePicker,
   Field,
+  Icon,
   IconButton,
   Modal,
   SectionHeader,
@@ -14,6 +23,75 @@ import {
   TextArea,
 } from '../components/ui.jsx';
 import { useCases } from '../App.jsx';
+
+const PeepoModal = ({ inv, initial, onSave, onDelete, onClose }) => {
+  const [draft, setDraft] = useState(initial);
+  const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
+  const isNew = !inv.peepo.some((p) => p.id === initial.id);
+  return (
+    <Modal
+      title={`PEEPO — ${draft.category}`}
+      onClose={onClose}
+      footer={
+        <>
+          {!isNew && (
+            <span className="left">
+              <Button variant="danger" icon="trash" onClick={() => onDelete(draft.id)}>
+                Delete
+              </Button>
+            </span>
+          )}
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            variant="primary"
+            disabled={!draft.text.trim()}
+            onClick={() => onSave(draft)}
+          >
+            Save
+          </Button>
+        </>
+      }
+    >
+      <Field
+        label="Line of enquiry"
+        hint="An idea to explore, a question to answer, or a condition to check."
+      >
+        <TextArea
+          value={draft.text}
+          onChange={set('text')}
+          rows={2}
+          placeholder="e.g. Was the traffic plan reviewed after the racking change?"
+        />
+      </Field>
+      <div className="grid-2">
+        <Field label="Category">
+          <Select
+            value={draft.category}
+            onChange={set('category')}
+            options={PEEPO_CATEGORIES.map((c) => c.key)}
+          />
+        </Field>
+        <Field label="Status">
+          <Select value={draft.status} onChange={set('status')} options={PEEPO_STATUS} />
+        </Field>
+      </div>
+      <Field
+        label="Evidence"
+        hint="Link the evidence this line of enquiry produced or relies on."
+      >
+        <EvidencePicker inv={inv} value={draft.evidenceIds} onChange={set('evidenceIds')} />
+      </Field>
+      <Field label="What was found">
+        <TextArea
+          value={draft.notes}
+          onChange={set('notes')}
+          rows={2}
+          placeholder="Outcome of exploring this — feeds the factor analysis below."
+        />
+      </Field>
+    </Modal>
+  );
+};
 
 const FactorModal = ({ inv, initial, onSave, onClose }) => {
   const [draft, setDraft] = useState(initial);
@@ -73,6 +151,24 @@ export const IcamStep = ({ inv, update }) => {
   const { goStep } = useCases();
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
+  const [peepoEditing, setPeepoEditing] = useState(null);
+
+  const savePeepo = (item) => {
+    update((c) => {
+      const exists = c.peepo.some((p) => p.id === item.id);
+      return {
+        ...c,
+        peepo: exists
+          ? c.peepo.map((p) => (p.id === item.id ? item : p))
+          : [...c.peepo, item],
+      };
+    });
+    setPeepoEditing(null);
+  };
+  const deletePeepo = (id) => {
+    update((c) => ({ ...c, peepo: c.peepo.filter((p) => p.id !== id) }));
+    setPeepoEditing(null);
+  };
 
   const save = (item) => {
     update((c) => {
@@ -131,8 +227,54 @@ export const IcamStep = ({ inv, update }) => {
     <section className="rise">
       <SectionHeader
         title="ICAM analysis"
-        sub="Map contributing factors along the causal chain: organisational factors create task conditions, which promote individual actions, which breach defences."
+        sub="Brainstorm lines of enquiry with PEEPO, then map contributing factors along the causal chain: organisational factors create task conditions, which promote individual actions, which breach defences."
       />
+
+      <div className="peepo-board">
+        <div className="peepo-head">
+          <div style={{ flex: 1 }}>
+            <div className="p-title">PEEPO brainstorm</div>
+            <div className="p-hint">
+              Ideas to explore and where the evidence sits — amber items still need
+              exploring, green are done. Click an item to record what was found.
+            </div>
+          </div>
+        </div>
+        <div className="peepo-grid">
+          {PEEPO_CATEGORIES.map((cat) => (
+            <div key={cat.key} className="peepo-col">
+              <div className="pc-name" title={cat.hint}>
+                {cat.key}
+              </div>
+              {inv.peepo
+                .filter((p) => p.category === cat.key)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`peepo-item ${p.status === 'Explored' ? 'explored' : 'to-explore'}`}
+                    onClick={() => setPeepoEditing(p)}
+                  >
+                    {p.text}
+                    <span className="pi-meta">
+                      {p.status === 'To explore' && <Tag tone="warn">To explore</Tag>}
+                      <EvidenceChips inv={inv} ids={p.evidenceIds} />
+                    </span>
+                  </button>
+                ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setPeepoEditing(newPeepoItem(cat.key))}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                <Icon name="plus" size={11} />
+                Add
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="icam-flow">
         {ICAM_ORDER.map((kindKey, i) => {
@@ -200,6 +342,15 @@ export const IcamStep = ({ inv, update }) => {
         <div className="icam-arrow">{ARROW_LABELS.afd}</div>
       </div>
 
+      {peepoEditing && (
+        <PeepoModal
+          inv={inv}
+          initial={peepoEditing}
+          onSave={savePeepo}
+          onDelete={deletePeepo}
+          onClose={() => setPeepoEditing(null)}
+        />
+      )}
       {editing && (
         <FactorModal
           inv={inv}

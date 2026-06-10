@@ -29,6 +29,16 @@ export const ReportStep = ({ inv, update }) => {
       .map((id) => inv.evidence.find((e) => e.id === id)?.ref)
       .filter(Boolean)
       .join(', ');
+  const hasActor = timeline.some((t) => t.actor?.trim());
+  const anyAnalysis = inv.methods.fiveWhys || inv.methods.icam || inv.methods.hfat;
+
+  // section numbering adapts to which sections exist
+  let n = 5;
+  const interviewsNum = inv.interviews.length ? n++ : null;
+  const analysisNum = anyAnalysis ? n++ : null;
+  const findingsNum = n++;
+  const actionsNum = n++;
+  const conclusionsNum = n;
 
   const doWord = async () => {
     setExporting(true);
@@ -128,13 +138,14 @@ export const ReportStep = ({ inv, update }) => {
         {timeline.length ? (
           <table>
             <thead>
-              <tr><th>Date</th><th>Time</th><th>Event</th><th>Evidence</th></tr>
+              <tr><th>Date</th><th>Time</th>{hasActor && <th>Actor</th>}<th>Event</th><th>Evidence</th></tr>
             </thead>
             <tbody>
               {timeline.map((t) => (
                 <tr key={t.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{fmtDate(t.date)}</td>
                   <td>{t.time || '—'}</td>
+                  {hasActor && <td style={{ whiteSpace: 'nowrap' }}>{t.actor || '—'}</td>}
                   <td>{t.text}</td>
                   <td className="mono" style={{ whiteSpace: 'nowrap' }}>{evRefs(t.evidenceIds) || '—'}</td>
                 </tr>
@@ -173,24 +184,44 @@ export const ReportStep = ({ inv, update }) => {
 
         {inv.interviews.length > 0 && (
           <>
-            <h2>5. Interviews</h2>
-            {inv.interviews.map((iv) => (
-              <div key={iv.id} className="r-block">
-                <h3>
-                  {iv.interviewee}
-                  {iv.role && <span className="muted"> — {iv.role}</span>}
-                  {iv.conductedOn && (
-                    <span className="muted"> · {fmtDate(iv.conductedOn)}</span>
+            <h2>{interviewsNum}. Interviews</h2>
+            {inv.interviews.map((iv) => {
+              const qa = iv.questions.filter((q) => q.question.trim() || q.answer.trim());
+              return (
+                <div key={iv.id} className="r-block">
+                  <h3>
+                    {iv.interviewee}
+                    {iv.role && <span className="muted"> — {iv.role}</span>}
+                    {iv.conductedOn && (
+                      <span className="muted"> · {fmtDate(iv.conductedOn)}</span>
+                    )}
+                  </h3>
+                  <Pre text={iv.keyPoints} placeholder="No key points recorded." />
+                  {qa.length > 0 && (
+                    <table>
+                      <thead>
+                        <tr><th>Question</th><th>Response</th></tr>
+                      </thead>
+                      <tbody>
+                        {qa.map((q) => (
+                          <tr key={q.id}>
+                            <td>{q.question || '—'}</td>
+                            <td>{q.answer || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
-                </h3>
-                <Pre text={iv.keyPoints} placeholder="No key points recorded." />
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </>
         )}
 
-        <h2>{inv.interviews.length ? '6' : '5'}. Analysis</h2>
+        {anyAnalysis && <h2>{analysisNum}. Analysis</h2>}
 
+        {inv.methods.fiveWhys && (
+          <>
         <h3>5 Whys</h3>
         {inv.fiveWhys.problem.trim() ? (
           <table>
@@ -223,6 +254,32 @@ export const ReportStep = ({ inv, update }) => {
         ) : (
           <p className="placeholder">5 Whys not completed.</p>
         )}
+          </>
+        )}
+
+        {inv.methods.icam && (
+          <>
+        {inv.peepo.length > 0 && (
+          <>
+            <h3>PEEPO — lines of enquiry</h3>
+            <table>
+              <thead>
+                <tr><th>Category</th><th>Line of enquiry</th><th>Status</th><th>Found</th><th>Evidence</th></tr>
+              </thead>
+              <tbody>
+                {inv.peepo.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{p.category}</td>
+                    <td>{p.text}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{p.status}</td>
+                    <td>{p.notes || '—'}</td>
+                    <td className="mono" style={{ whiteSpace: 'nowrap' }}>{evRefs(p.evidenceIds) || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
 
         <h3>ICAM contributing factors</h3>
         {factors.length ? (
@@ -246,8 +303,10 @@ export const ReportStep = ({ inv, update }) => {
         ) : (
           <p className="placeholder">No ICAM factors recorded.</p>
         )}
+          </>
+        )}
 
-        {inv.hfat.length > 0 && (
+        {inv.methods.hfat && inv.hfat.length > 0 && (
           <>
             <h3>Human factors (mini-HFAT)</h3>
             {inv.hfat.map((h, i) => (
@@ -271,10 +330,10 @@ export const ReportStep = ({ inv, update }) => {
           </>
         )}
 
-        <h2>{inv.interviews.length ? '7' : '6'}. Key findings</h2>
+        <h2>{findingsNum}. Key findings</h2>
         <Pre text={r.keyFindings} placeholder="No findings written yet." />
 
-        <h2>{inv.interviews.length ? '8' : '7'}. Corrective actions</h2>
+        <h2>{actionsNum}. Corrective actions</h2>
         {inv.actions.length ? (
           <table>
             <thead>
@@ -299,7 +358,7 @@ export const ReportStep = ({ inv, update }) => {
           <p className="placeholder">No corrective actions recorded.</p>
         )}
 
-        <h2>{inv.interviews.length ? '9' : '8'}. Conclusions</h2>
+        <h2>{conclusionsNum}. Conclusions</h2>
         <Pre text={r.conclusions} placeholder="No conclusions written yet." />
 
         <div className="r-meta-grid" style={{ marginTop: 28 }}>

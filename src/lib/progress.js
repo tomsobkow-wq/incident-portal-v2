@@ -7,12 +7,16 @@ export const STEPS = [
   { key: 'evidence', label: 'Evidence' },
   { key: 'interviews', label: 'Interviews' },
   { key: 'timeline', label: 'Timeline' },
-  { key: 'fiveWhys', label: '5 Whys' },
-  { key: 'icam', label: 'ICAM analysis' },
-  { key: 'hfat', label: 'mini-HFAT' },
+  { key: 'fiveWhys', label: '5 Whys', method: 'fiveWhys' },
+  { key: 'icam', label: 'ICAM analysis', method: 'icam' },
+  { key: 'hfat', label: 'mini-HFAT', method: 'hfat' },
   { key: 'actions', label: 'Actions' },
   { key: 'report', label: 'Report' },
 ];
+
+// Steps visible for this investigation, given its selected analysis methods.
+export const stepsFor = (inv) =>
+  STEPS.filter((s) => !s.method || inv.methods?.[s.method]);
 
 const status = (done, started) => (done ? 'done' : started ? 'started' : 'empty');
 
@@ -70,6 +74,7 @@ export const stepStatus = (inv) => {
 
 export const overallProgress = (inv) => {
   const s = stepStatus(inv);
-  const done = STEPS.filter(({ key }) => s[key] === 'done').length;
-  return { done, total: STEPS.length, fraction: done / STEPS.length };
+  const steps = stepsFor(inv);
+  const done = steps.filter(({ key }) => s[key] === 'done').length;
+  return { done, total: steps.length, fraction: done / steps.length };
 };

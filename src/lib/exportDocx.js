@@ -140,11 +140,18 @@ export const exportDocx = async (inv) => {
   }
 
   children.push(h2('3. Sequence of events'));
+  const hasActor = timeline.some((t) => t.actor?.trim());
   children.push(
     timeline.length
       ? table(
-          ['Date', 'Time', 'Event', 'Evidence'],
-          timeline.map((t) => [fmtDate(t.date), t.time, t.text, evRefs(t.evidenceIds)])
+          hasActor
+            ? ['Date', 'Time', 'Actor', 'Event', 'Evidence']
+            : ['Date', 'Time', 'Event', 'Evidence'],
+          timeline.map((t) =>
+            hasActor
+              ? [fmtDate(t.date), t.time, t.actor, t.text, evRefs(t.evidenceIds)]
+              : [fmtDate(t.date), t.time, t.text, evRefs(t.evidenceIds)]
+          )
         )
       : para('No timeline entries.', { muted: true, italics: true })
   );
@@ -177,12 +184,25 @@ export const exportDocx = async (inv) => {
         ),
         ...multiline(iv.keyPoints, 'No key points recorded.')
       );
+      const qa = iv.questions.filter((q) => q.question.trim() || q.answer.trim());
+      if (qa.length) {
+        children.push(
+          table(
+            ['Question', 'Response'],
+            qa.map((q) => [q.question, q.answer])
+          )
+        );
+      }
     });
   }
 
-  children.push(h2(`${section}. Analysis`));
-  section += 1;
+  const anyAnalysis = inv.methods.fiveWhys || inv.methods.icam || inv.methods.hfat;
+  if (anyAnalysis) {
+    children.push(h2(`${section}. Analysis`));
+    section += 1;
+  }
 
+  if (inv.methods.fiveWhys) {
   children.push(h3('5 Whys'));
   if (inv.fiveWhys.problem.trim()) {
     const rows = [['Problem', inv.fiveWhys.problem]];
@@ -199,6 +219,18 @@ export const exportDocx = async (inv) => {
   } else {
     children.push(para('5 Whys not completed.', { muted: true, italics: true }));
   }
+  }
+
+  if (inv.methods.icam) {
+  if (inv.peepo.length) {
+    children.push(h3('PEEPO — lines of enquiry'));
+    children.push(
+      table(
+        ['Category', 'Line of enquiry', 'Status', 'Found', 'Evidence'],
+        inv.peepo.map((p) => [p.category, p.text, p.status, p.notes, evRefs(p.evidenceIds)])
+      )
+    );
+  }
 
   children.push(h3('ICAM contributing factors'));
   children.push(
@@ -211,8 +243,9 @@ export const exportDocx = async (inv) => {
         )
       : para('No ICAM factors recorded.', { muted: true, italics: true })
   );
+  }
 
-  if (inv.hfat.length) {
+  if (inv.methods.hfat && inv.hfat.length) {
     children.push(h3('Human factors (mini-HFAT)'));
     inv.hfat.forEach((h, i) => {
       children.push(
