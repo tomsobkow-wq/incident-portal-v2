@@ -177,25 +177,28 @@ export const exportDocx = async (inv) => {
   if (inv.interviews.length) {
     children.push(h2(`${section}. Interviews`));
     section += 1;
+    children.push(
+      para(
+        `${inv.interviews.length} interview${
+          inv.interviews.length > 1 ? 's were' : ' was'
+        } conducted as part of this investigation, with the following:`
+      )
+    );
     inv.interviews.forEach((iv) => {
       children.push(
-        h3(
-          `${iv.interviewee}${iv.role ? ` — ${iv.role}` : ''}${
-            iv.conductedOn ? ` · ${fmtDate(iv.conductedOn)}` : ''
+        para(
+          `• ${iv.role || 'Role not recorded'}${
+            iv.conductedOn ? ` — ${fmtDate(iv.conductedOn)}` : ''
           }`
-        ),
-        ...multiline(iv.keyPoints, 'No key points recorded.')
+        )
       );
-      const qa = iv.questions.filter((q) => q.question.trim() || q.answer.trim());
-      if (qa.length) {
-        children.push(
-          table(
-            ['Question', 'Response'],
-            qa.map((q) => [q.question, q.answer])
-          )
-        );
-      }
     });
+    children.push(
+      para(
+        'Interview records are held in the investigation file and are not reproduced in this report.',
+        { muted: true, italics: true }
+      )
+    );
   }
 
   const anyAnalysis = inv.methods.fiveWhys || inv.methods.icam || inv.methods.hfat;
@@ -262,7 +265,7 @@ export const exportDocx = async (inv) => {
         children.push(
           para(
             `Performance-shaping conditions: ${h.conditions
-              .map((c) => `${c.condition} (${c.level.toLowerCase()})`)
+              .map((c) => c.condition)
               .join(', ')}`,
             { muted: true }
           )
@@ -272,12 +275,22 @@ export const exportDocx = async (inv) => {
     });
   }
 
-  children.push(h2(`${section}. Key findings`));
+  children.push(h2(`${section}. Findings`));
   section += 1;
-  children.push(...multiline(r.keyFindings, 'No findings written.'));
+  const findingLines = r.keyFindings.split('\n').filter((l) => l.trim());
+  if (findingLines.length) {
+    findingLines.forEach((l, i) => children.push(para(`${i + 1}. ${l}`)));
+    children.push(
+      para(
+        'These findings identify safety factors and should not be read as apportioning blame or liability to any organisation or individual.',
+        { muted: true, italics: true }
+      )
+    );
+  } else {
+    children.push(para('No findings written.', { muted: true, italics: true }));
+  }
 
   children.push(h2(`${section}. Corrective actions`));
-  section += 1;
   children.push(
     inv.actions.length
       ? table(
@@ -296,9 +309,6 @@ export const exportDocx = async (inv) => {
         )
       : para('No corrective actions recorded.', { muted: true, italics: true })
   );
-
-  children.push(h2(`${section}. Conclusions`));
-  children.push(...multiline(r.conclusions, 'No conclusions written.'));
 
   children.push(
     new Paragraph({ spacing: { before: 360 }, children: [] }),

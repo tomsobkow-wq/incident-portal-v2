@@ -254,6 +254,16 @@
 .content {
   padding: 40px 48px 80px;
 }
+.print-only {
+  display: none;
+}
+.step-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -34px;
+  position: relative;
+  z-index: 5;
+}
 .content-inner {
   max-width: 860px;
   margin: 0 auto;
@@ -801,6 +811,14 @@
   line-height: 1.45;
   cursor: pointer;
   transition: border-color 0.15s ease;
+  overflow-wrap: anywhere;
+}
+/* the board shows an abbreviation — full text lives in the editor */
+.peepo-item .pi-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .peepo-item:hover {
   border-color: var(--line-strong);
@@ -982,7 +1000,7 @@
 }
 .psc-row {
   display: grid;
-  grid-template-columns: 190px 84px 1fr 28px;
+  grid-template-columns: 210px 1fr 28px;
   gap: 10px;
   align-items: center;
   padding: 7px 0;

@@ -1,4 +1,5 @@
-/* PDF export = browser print of the report document only. */
+/* Printing: the Report step prints as the formal document; every other
+   step prints cleanly on its own via the "Print this step" button. */
 @media print {
   @page {
     margin: 18mm 16mm;
@@ -11,7 +12,10 @@
   .no-print,
   .rail,
   .step-foot,
-  .section-head .actions {
+  .step-tools,
+  .section-head .actions,
+  .btn,
+  .icon-btn {
     display: none !important;
   }
 
@@ -27,6 +31,45 @@
     max-width: none;
   }
 
+  /* case header stamped on every printed step */
+  .print-only {
+    display: block;
+  }
+  .print-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #1f1c18;
+    font-size: 12pt;
+    font-weight: 600;
+  }
+  .print-head .ph-step {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9pt;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #57514a;
+  }
+
+  /* keep list items and cards intact across page breaks */
+  .ev-row,
+  .iv-card,
+  .fw-why,
+  .fw-problem,
+  .fw-root,
+  .factor-card,
+  .action-row,
+  .tl-entry,
+  .hfat-sec,
+  .peepo-item {
+    break-inside: avoid;
+  }
+
+  /* the report step hides the stamped header — the document has its own */
   .report-doc {
     border: none;
     border-radius: 0;
@@ -41,5 +84,12 @@
   .report-doc table,
   .report-doc .r-block {
     break-inside: avoid;
+  }
+
+  /* expand clamped PEEPO text when printing */
+  .peepo-item .pi-text {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
   }
 }

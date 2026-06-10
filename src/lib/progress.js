@@ -66,8 +66,8 @@ export const stepStatus = (inv) => {
       inv.actions.length >= 1
     ),
     report: status(
-      inv.report.summary.trim() && inv.report.conclusions.trim(),
-      Object.values(inv.report).some((v) => v.trim())
+      inv.report.summary.trim() && inv.report.keyFindings.trim(),
+      Object.values(inv.report).some((v) => v && v.trim())
     ),
   };
 };

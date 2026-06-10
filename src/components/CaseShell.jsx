@@ -111,6 +111,19 @@ export const CaseShell = ({ inv }) => {
 
       <main className="content">
         <div className="content-inner">
+          {step !== 'report' && (
+            <>
+              <div className="print-only print-head">
+                <span className="mono">{inv.ref}</span> — {inv.title}
+                <span className="ph-step">{steps[idx].label}</span>
+              </div>
+              <div className="step-tools no-print">
+                <Button size="sm" variant="ghost" icon="print" onClick={() => window.print()}>
+                  Print this step
+                </Button>
+              </div>
+            </>
+          )}
           <View key={inv.id + step} inv={inv} update={update} />
           <div className="step-foot no-print">
             {idx > 0 && (

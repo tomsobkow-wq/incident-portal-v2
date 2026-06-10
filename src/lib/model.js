@@ -140,8 +140,6 @@ export const HFAT_CONDITIONS = [
   'Equipment & interface',
 ];
 
-export const HFAT_LEVELS = ['High', 'Medium', 'Low'];
-
 // Corrective actions — hierarchy of control
 export const ACTION_HIERARCHY = [
   'Elimination',
@@ -292,7 +290,6 @@ export const newInvestigation = (title, cases) => {
     report: {
       summary: '',
       keyFindings: '',
-      conclusions: '',
       preparedBy: '',
       approvedBy: '',
     },

@@ -3,7 +3,6 @@ import {
   HFAT_CONDITIONS,
   HFAT_ERROR_TYPES,
   HFAT_FINDINGS,
-  HFAT_LEVELS,
   newHfatEntry,
   uid,
 } from '../lib/model.js';
@@ -19,8 +18,6 @@ import {
   Tag,
   TextArea,
 } from '../components/ui.jsx';
-
-const LEVEL_TONE = { High: 'accent', Medium: 'warn', Low: 'ok' };
 
 const HfatCard = ({ inv, entry, onChange, onDelete }) => {
   const set = (patch) => onChange({ ...entry, ...patch });
@@ -41,7 +38,7 @@ const HfatCard = ({ inv, entry, onChange, onDelete }) => {
     set({
       conditions: [
         ...entry.conditions,
-        { id: uid(), condition: HFAT_CONDITIONS[0], level: 'Medium', note: '' },
+        { id: uid(), condition: HFAT_CONDITIONS[0], note: '' },
       ],
     });
   const setCondition = (id, patch) =>
@@ -158,12 +155,6 @@ const HfatCard = ({ inv, entry, onChange, onDelete }) => {
               options={HFAT_CONDITIONS}
               aria-label="Condition"
             />
-            <Select
-              value={c.level}
-              onChange={(v) => setCondition(c.id, { level: v })}
-              options={HFAT_LEVELS}
-              aria-label="Influence level"
-            />
             <Input
               value={c.note}
               onChange={(v) => setCondition(c.id, { note: v })}
@@ -178,21 +169,10 @@ const HfatCard = ({ inv, entry, onChange, onDelete }) => {
             />
           </div>
         ))}
-        <div style={{ marginTop: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ marginTop: 8 }}>
           <Button size="sm" icon="plus" onClick={addCondition}>
             Add condition
           </Button>
-          {entry.conditions.length > 0 && (
-            <span style={{ display: 'inline-flex', gap: 5 }}>
-              {entry.conditions
-                .filter((c) => c.level)
-                .map((c) => (
-                  <Tag key={c.id} tone={LEVEL_TONE[c.level]}>
-                    {c.condition}
-                  </Tag>
-                ))}
-            </span>
-          )}
         </div>
       </div>
 

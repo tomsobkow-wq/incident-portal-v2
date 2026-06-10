@@ -38,8 +38,8 @@ export const ReportStep = ({ inv, update }) => {
   const interviewsNum = inv.interviews.length ? n++ : null;
   const analysisNum = anyAnalysis ? n++ : null;
   const findingsNum = n++;
-  const actionsNum = n++;
-  const conclusionsNum = n;
+  const actionsNum = n;
+  const findingLines = r.keyFindings.split('\n').filter((l) => l.trim());
 
   const doWord = async () => {
     setExporting(true);
@@ -79,20 +79,15 @@ export const ReportStep = ({ inv, update }) => {
               placeholder="What happened, why, and what will change — in a paragraph a senior manager will actually read."
             />
           </Field>
-          <Field label="Key findings">
+          <Field
+            label="Findings"
+            hint="One finding per line — they are numbered in the report. Findings state safety factors, not blame."
+          >
             <TextArea
               value={r.keyFindings}
               onChange={set('keyFindings')}
-              rows={4}
+              rows={5}
               placeholder="One finding per line…"
-            />
-          </Field>
-          <Field label="Conclusions">
-            <TextArea
-              value={r.conclusions}
-              onChange={set('conclusions')}
-              rows={4}
-              placeholder="What the investigation concludes about cause and prevention."
             />
           </Field>
           <Field label="Prepared by">
@@ -203,36 +198,24 @@ export const ReportStep = ({ inv, update }) => {
         {inv.interviews.length > 0 && (
           <>
             <h2>{interviewsNum}. Interviews</h2>
-            {inv.interviews.map((iv) => {
-              const qa = iv.questions.filter((q) => q.question.trim() || q.answer.trim());
-              return (
-                <div key={iv.id} className="r-block">
-                  <h3>
-                    {iv.interviewee}
-                    {iv.role && <span className="muted"> — {iv.role}</span>}
-                    {iv.conductedOn && (
-                      <span className="muted"> · {fmtDate(iv.conductedOn)}</span>
-                    )}
-                  </h3>
-                  <Pre text={iv.keyPoints} placeholder="No key points recorded." />
-                  {qa.length > 0 && (
-                    <table>
-                      <thead>
-                        <tr><th>Question</th><th>Response</th></tr>
-                      </thead>
-                      <tbody>
-                        {qa.map((q) => (
-                          <tr key={q.id}>
-                            <td>{q.question || '—'}</td>
-                            <td>{q.answer || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <p>
+              {inv.interviews.length} interview{inv.interviews.length > 1 ? 's were' : ' was'}{' '}
+              conducted as part of this investigation, with the following:
+            </p>
+            <ul>
+              {inv.interviews.map((iv) => (
+                <li key={iv.id}>
+                  {iv.role || 'Role not recorded'}
+                  {iv.conductedOn && (
+                    <span className="muted"> — {fmtDate(iv.conductedOn)}</span>
                   )}
-                </div>
-              );
-            })}
+                </li>
+              ))}
+            </ul>
+            <p className="muted" style={{ fontSize: 12 }}>
+              Interview records are held in the investigation file and are not reproduced in
+              this report.
+            </p>
           </>
         )}
 
@@ -339,7 +322,7 @@ export const ReportStep = ({ inv, update }) => {
                 {h.conditions.length > 0 && (
                   <p className="muted" style={{ fontSize: 12 }}>
                     Performance-shaping conditions:{' '}
-                    {h.conditions.map((c) => `${c.condition} (${c.level.toLowerCase()})`).join(', ')}
+                    {h.conditions.map((c) => c.condition).join(', ')}
                   </p>
                 )}
                 {h.summary.trim() && <p className="pre">{h.summary}</p>}
@@ -348,8 +331,22 @@ export const ReportStep = ({ inv, update }) => {
           </>
         )}
 
-        <h2>{findingsNum}. Key findings</h2>
-        <Pre text={r.keyFindings} placeholder="No findings written yet." />
+        <h2>{findingsNum}. Findings</h2>
+        {findingLines.length ? (
+          <>
+            <ol>
+              {findingLines.map((l, i) => (
+                <li key={i}>{l}</li>
+              ))}
+            </ol>
+            <p className="muted" style={{ fontSize: 12, fontStyle: 'italic' }}>
+              These findings identify safety factors and should not be read as apportioning
+              blame or liability to any organisation or individual.
+            </p>
+          </>
+        ) : (
+          <p className="placeholder">No findings written yet.</p>
+        )}
 
         <h2>{actionsNum}. Corrective actions</h2>
         {inv.actions.length ? (
@@ -380,9 +377,6 @@ export const ReportStep = ({ inv, update }) => {
         ) : (
           <p className="placeholder">No corrective actions recorded.</p>
         )}
-
-        <h2>{conclusionsNum}. Conclusions</h2>
-        <Pre text={r.conclusions} placeholder="No conclusions written yet." />
 
         <div className="r-meta-grid" style={{ marginTop: 28 }}>
           <div><span className="k">Prepared by</span>{r.preparedBy || '—'}</div>

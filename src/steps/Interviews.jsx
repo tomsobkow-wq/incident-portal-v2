@@ -38,7 +38,7 @@ const QAEditor = ({ questions, onChange }) => {
             <TextArea
               value={q.answer}
               onChange={(v) => setQ(q.id, { answer: v })}
-              rows={2}
+              rows={4}
               placeholder="Their response, as close to verbatim as possible"
               aria-label={`Response ${i + 1}`}
             />
@@ -71,7 +71,7 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
     <Modal
       title={initial.interviewee ? `Interview — ${initial.interviewee}` : 'New interview'}
       onClose={onClose}
-      width={680}
+      width={960}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -130,7 +130,7 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
                 <TextArea
                   value={draft.notes[p.key]}
                   onChange={setNote(p.key)}
-                  rows={p.key === 'freeRecall' ? 5 : 2}
+                  rows={p.key === 'freeRecall' ? 10 : 3}
                   placeholder={p.key === 'freeRecall' ? 'Their account, in their words…' : ''}
                   aria-label={p.label}
                 />

@@ -39,6 +39,7 @@ const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => 
     <Modal
       title={`PEEPO — ${draft.category}`}
       onClose={onClose}
+      width={780}
       footer={
         <>
           {!isNew && (
@@ -66,7 +67,7 @@ const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => 
         <TextArea
           value={draft.text}
           onChange={set('text')}
-          rows={2}
+          rows={4}
           placeholder="e.g. Was the traffic plan reviewed after the racking change?"
         />
       </Field>
@@ -92,7 +93,7 @@ const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => 
         <TextArea
           value={draft.notes}
           onChange={set('notes')}
-          rows={2}
+          rows={5}
           placeholder="Outcome of exploring this — feeds the factor analysis below."
         />
       </Field>
@@ -316,7 +317,7 @@ export const IcamStep = ({ inv, update }) => {
                     className={`peepo-item ${p.status === 'Explored' ? 'explored' : 'to-explore'}`}
                     onClick={() => setPeepoEditing(p)}
                   >
-                    {p.text}
+                    <span className="pi-text">{p.text}</span>
                     <span className="pi-meta">
                       {p.status === 'To explore' && <Tag tone="warn">To explore</Tag>}
                       {p.factorId && <Tag tone="steel">In ICAM</Tag>}
