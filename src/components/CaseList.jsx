@@ -1,8 +1,21 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCases } from '../App.jsx';
 import { SEVERITY_COLOR, fmtDate } from '../lib/model.js';
 import { overallProgress } from '../lib/progress.js';
 import { Button, ConfirmDialog, EmptyState, Icon, IconButton, Input, Modal, Tag } from './ui.jsx';
+
+// Download one investigation as a .json backup file.
+const exportCase = (c) => {
+  const blob = new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${c.ref} ${c.title}.json`.replace(/[/\\:*?"<>|]/g, '-');
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+};
 
 const NewCaseModal = ({ onClose }) => {
   const { createCase } = useCases();
@@ -45,9 +58,27 @@ const NewCaseModal = ({ onClose }) => {
 };
 
 export const CaseList = () => {
-  const { cases, openCase, deleteCase } = useCases();
+  const { cases, openCase, deleteCase, importCase } = useCases();
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
+  const [importError, setImportError] = useState('');
+  const importRef = useRef(null);
+
+  const handleImport = async (file) => {
+    if (!file) return;
+    setImportError('');
+    try {
+      const obj = JSON.parse(await file.text());
+      if (!obj || typeof obj.title !== 'string' || !obj.ref) {
+        throw new Error('not a case file');
+      }
+      importCase(obj);
+    } catch {
+      setImportError(
+        `“${file.name}” doesn’t look like an Incident Portal case file (.json exported from the list).`
+      );
+    }
+  };
 
   return (
     <div className="home">
@@ -56,10 +87,34 @@ export const CaseList = () => {
           <div className="overline">Incident Portal</div>
           <h1>Investigations</h1>
         </div>
-        <Button variant="primary" icon="plus" onClick={() => setCreating(true)}>
-          New investigation
-        </Button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <Button icon="upload" onClick={() => importRef.current?.click()}>
+            Import
+          </Button>
+          <Button variant="primary" icon="plus" onClick={() => setCreating(true)}>
+            New investigation
+          </Button>
+        </div>
+        <input
+          ref={importRef}
+          type="file"
+          accept="application/json,.json"
+          className="visually-hidden"
+          aria-label="Import a case backup"
+          onChange={(e) => {
+            handleImport(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
       </header>
+      {importError && (
+        <div
+          className="card pad rise"
+          style={{ marginBottom: 14, borderColor: 'var(--accent)', background: 'var(--accent-tint)', fontSize: 13 }}
+        >
+          {importError}
+        </div>
+      )}
 
       {cases.length === 0 ? (
         <div className="rise rise-1">
@@ -111,6 +166,14 @@ export const CaseList = () => {
                     {p.done}/{p.total}
                   </span>
                 </div>
+                <IconButton
+                  icon="download"
+                  label={`Export ${c.ref} as a backup file`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    exportCase(c);
+                  }}
+                />
                 <IconButton
                   icon="trash"
                   label={`Delete ${c.ref}`}

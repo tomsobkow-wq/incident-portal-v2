@@ -4,6 +4,7 @@ import {
   fmtDate,
   ICAM_KINDS,
   ICAM_ORDER,
+  isOverdue,
 } from '../lib/model.js';
 import { Button, Field, Input, SectionHeader, TextArea } from '../components/ui.jsx';
 
@@ -364,7 +365,12 @@ export const ReportStep = ({ inv, update }) => {
                     {a.detail && <span className="muted"> — {a.detail}</span>}
                   </td>
                   <td style={{ whiteSpace: 'nowrap' }}>{a.owner || '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{fmtDate(a.due) || '—'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {fmtDate(a.due) || '—'}
+                    {isOverdue(a) && (
+                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}> (overdue)</span>
+                    )}
+                  </td>
                   <td style={{ whiteSpace: 'nowrap' }}>{a.hierarchy || '—'}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>{a.status}</td>
                 </tr>

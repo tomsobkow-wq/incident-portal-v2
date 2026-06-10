@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { loadState, saveState, loadRoute, saveRoute } from './lib/storage.js';
-import { newInvestigation } from './lib/model.js';
+import { migrateCase, newInvestigation, uid } from './lib/model.js';
 import { CaseList } from './components/CaseList.jsx';
 import { CaseShell } from './components/CaseShell.jsx';
 
@@ -35,7 +35,15 @@ export default function App() {
           c.id === id ? { ...fn(c), updatedAt: new Date().toISOString() } : c
         )
       );
-    return { cases, route, goHome, openCase, goStep, createCase, deleteCase, updateCase };
+    // Restore a case from an exported .json backup. A fresh id is assigned if
+    // the backup collides with a case already on this device.
+    const importCase = (obj) => {
+      const inv = migrateCase(obj);
+      if (cases.some((c) => c.id === inv.id)) inv.id = uid();
+      setCases((cs) => [inv, ...cs]);
+      return inv;
+    };
+    return { cases, route, goHome, openCase, goStep, createCase, deleteCase, updateCase, importCase };
   }, [cases, route]);
 
   const openInv =

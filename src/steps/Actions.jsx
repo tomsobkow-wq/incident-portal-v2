@@ -5,6 +5,7 @@ import {
   allIcamFactors,
   fmtDate,
   ICAM_KINDS,
+  isOverdue,
   newAction,
 } from '../lib/model.js';
 import {
@@ -27,6 +28,7 @@ const STATUS_TONE = {
   'In progress': 'warn',
   Complete: 'ok',
 };
+
 
 const ActionModal = ({ inv, initial, onSave, onClose }) => {
   const [draft, setDraft] = useState(initial);
@@ -210,6 +212,7 @@ export const ActionsStep = ({ inv, update }) => {
                 {a.detail && <div className="a-detail">{a.detail}</div>}
                 <div className="a-meta">
                   <Tag tone={STATUS_TONE[a.status]}>{a.status}</Tag>
+                  {isOverdue(a) && <Tag tone="accent">Overdue</Tag>}
                   {a.hierarchy && <Tag tone="steel">{a.hierarchy}</Tag>}
                   {a.owner && <span>{a.owner}</span>}
                   {a.due && <span>Due {fmtDate(a.due)}</span>}

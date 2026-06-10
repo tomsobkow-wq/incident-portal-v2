@@ -416,5 +416,8 @@ export const migrateCase = (c) => ({
   })),
 });
 
+export const isOverdue = (a) =>
+  a.due && a.status !== 'Complete' && new Date(`${a.due}T23:59:59`) < new Date();
+
 export const allIcamFactors = (inv) =>
   ICAM_ORDER.flatMap((k) => inv.icam[k].map((f) => ({ ...f, kind: k })));

@@ -282,13 +282,17 @@ export const exportDocx = async (inv) => {
     inv.actions.length
       ? table(
           ['Action', 'Owner', 'Due', 'Control', 'Status'],
-          inv.actions.map((a) => [
-            a.detail ? `${a.title} — ${a.detail}` : a.title,
-            a.owner,
-            fmtDate(a.due),
-            a.hierarchy,
-            a.status,
-          ])
+          inv.actions.map((a) => {
+            const overdue =
+              a.due && a.status !== 'Complete' && new Date(`${a.due}T23:59:59`) < new Date();
+            return [
+              a.detail ? `${a.title} — ${a.detail}` : a.title,
+              a.owner,
+              `${fmtDate(a.due)}${overdue ? ' (OVERDUE)' : ''}`,
+              a.hierarchy,
+              a.status,
+            ];
+          })
         )
       : para('No corrective actions recorded.', { muted: true, italics: true })
   );
