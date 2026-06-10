@@ -780,17 +780,22 @@
 }
 .peepo-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* minmax(0, …) lets columns shrink below their content width —
+     otherwise long chips force the 5th column off the board */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
 }
 .peepo-col {
   padding: 10px;
   border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   min-height: 120px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
+.peepo-col:nth-child(5n),
 .peepo-col:last-child {
   border-right: none;
 }
@@ -835,14 +840,35 @@
   margin-top: 5px;
   flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
+}
+/* chips must truncate inside narrow columns, never overflow them */
+.peepo-item .chip {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* three across (wrapping onto a second row) when the board gets tight */
+@media (max-width: 1150px) {
+  .peepo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .peepo-col:nth-child(5n) {
+    border-right: 1px solid var(--line);
+  }
+  .peepo-col:nth-child(3n),
+  .peepo-col:last-child {
+    border-right: none;
+  }
 }
 @media (max-width: 900px) {
   .peepo-grid {
     grid-template-columns: 1fr;
   }
-  .peepo-col {
+  .peepo-col,
+  .peepo-col:nth-child(5n),
+  .peepo-col:nth-child(3n) {
     border-right: none;
-    border-bottom: 1px solid var(--line);
   }
 }
 
