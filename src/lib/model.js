@@ -37,10 +37,12 @@ export const EVIDENCE_TYPES = [
 // Individual/Team Actions → Absent/Failed Defences → Incident
 export const ICAM_ORDER = ['of', 'tec', 'ita', 'afd'];
 
+// `tag` is the compact form used on chips and tables — always a readable
+// name, never an abbreviation.
 export const ICAM_KINDS = {
   of: {
     label: 'Organisational Factors',
-    short: 'OF',
+    tag: 'Organisational factor',
     color: '#6d5a8e',
     hint: 'Underlying organisational causes — training, leadership, culture, resourcing, change management',
     help: [
@@ -64,7 +66,7 @@ export const ICAM_KINDS = {
   },
   tec: {
     label: 'Task / Environmental Conditions',
-    short: 'TEC',
+    tag: 'Task / environmental condition',
     color: '#44607a',
     hint: 'Workplace conditions that promoted the actions or weakened defences',
     help: [
@@ -87,7 +89,7 @@ export const ICAM_KINDS = {
   },
   ita: {
     label: 'Individual / Team Actions',
-    short: 'ITA',
+    tag: 'Individual / team action',
     color: '#c06b1c',
     hint: 'Errors or violations by individuals or teams that led directly to the incident',
     help: [
@@ -102,7 +104,7 @@ export const ICAM_KINDS = {
   },
   afd: {
     label: 'Absent / Failed Defences',
-    short: 'AFD',
+    tag: 'Absent / failed defence',
     color: '#a93315',
     hint: 'Barriers that should have prevented the incident or limited its consequences',
     help: [
@@ -334,6 +336,7 @@ export const newTimelineEntry = () => ({
   time: '',
   actor: '',
   text: '',
+  isIncident: false, // exactly one entry can be marked as the incident itself
   evidenceIds: [],
 });
 
@@ -402,7 +405,7 @@ export const migrateCase = (c) => ({
   methods: c.methods || { fiveWhys: true, icam: true, hfat: true },
   peepo: (c.peepo || []).map((p) => ({ factorId: '', ...p })),
   evidence: (c.evidence || []).map((e) => ({ file: null, ...e })),
-  timeline: (c.timeline || []).map((t) => ({ actor: '', ...t })),
+  timeline: (c.timeline || []).map((t) => ({ actor: '', isIncident: false, ...t })),
   interviews: (c.interviews || []).map((iv) => ({
     ...iv,
     questions:

@@ -1,4 +1,5 @@
-import { newIcamFactor, newWhy } from '../lib/model.js';
+import { useState } from 'react';
+import { allIcamFactors, newIcamFactor, newWhy } from '../lib/model.js';
 import {
   Button,
   EvidencePicker,
@@ -7,12 +8,16 @@ import {
   SectionHeader,
   TextArea,
 } from '../components/ui.jsx';
+import { ContributionDialog } from '../components/ContributionDialog.jsx';
 import { useCases } from '../App.jsx';
 
-const MAX_WHYS = 7;
+// Five whys is the method — and the limit. If the chain hasn't reached an
+// organisational cause by then, the problem statement is usually too broad.
+const MAX_WHYS = 5;
 
 export const FiveWhysStep = ({ inv, update }) => {
   const { goStep } = useCases();
+  const [confirming, setConfirming] = useState(false);
   const fw = inv.fiveWhys;
 
   const setFw = (patch) =>
@@ -27,17 +32,21 @@ export const FiveWhysStep = ({ inv, update }) => {
   const prevAnswer = (i) =>
     i === 0 ? fw.problem : fw.whys[i - 1]?.answer || '';
 
-  const promoted = inv.icam.of.some((f) => f.text === fw.rootCause.trim());
-  const promote = () => {
+  const promoted = allIcamFactors(inv).some((f) => f.text === fw.rootCause.trim());
+  const promote = (kind) => {
     const text = fw.rootCause.trim();
     if (!text || promoted) return;
     update((c) => ({
       ...c,
       icam: {
         ...c.icam,
-        of: [...c.icam.of, { ...newIcamFactor('of'), text, notes: 'Promoted from 5 Whys root cause' }],
+        [kind]: [
+          ...c.icam[kind],
+          { ...newIcamFactor(kind), text, notes: 'Promoted from 5 Whys root cause' },
+        ],
       },
     }));
+    setConfirming(false);
     goStep('icam');
   };
 
@@ -99,7 +108,7 @@ export const FiveWhysStep = ({ inv, update }) => {
           );
         })}
 
-        {fw.whys.length < MAX_WHYS && (
+        {fw.whys.length < MAX_WHYS ? (
           <>
             <div className="fw-connector" />
             <Button
@@ -110,6 +119,15 @@ export const FiveWhysStep = ({ inv, update }) => {
             >
               {fw.whys.length === 0 ? 'Ask the first why' : 'Ask why again'}
             </Button>
+          </>
+        ) : (
+          <>
+            <div className="fw-connector" />
+            <div className="fw-limit">
+              Five whys is the limit. If you haven&apos;t reached an
+              organisational cause yet, the problem statement is probably too
+              broad — tighten it and run the chain again.
+            </div>
           </>
         )}
 
@@ -129,10 +147,10 @@ export const FiveWhysStep = ({ inv, update }) => {
               size="sm"
               variant="subtle"
               disabled={!fw.rootCause.trim() || promoted}
-              onClick={promote}
+              onClick={() => setConfirming(true)}
             >
               <Icon name="link" size={12} />
-              {promoted ? 'Promoted to ICAM' : 'Promote to ICAM organisational factor'}
+              {promoted ? 'In the ICAM factor table' : 'Add to ICAM factor table…'}
             </Button>
             <span className="hint">
               If the root cause names a person rather than a system, ask why once more.
@@ -140,6 +158,15 @@ export const FiveWhysStep = ({ inv, update }) => {
           </div>
         </div>
       </div>
+
+      {confirming && (
+        <ContributionDialog
+          text={fw.rootCause.trim()}
+          defaultKind="of"
+          onConfirm={promote}
+          onClose={() => setConfirming(false)}
+        />
+      )}
     </section>
   );
 };

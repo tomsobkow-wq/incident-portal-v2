@@ -1,25 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   fmtDate,
   INTERVIEW_PHASES,
   newEvidence,
   newInterview,
   newQuestion,
+  newTimelineEntry,
 } from '../lib/model.js';
 import {
+  AutoTextArea,
   Button,
   ConfirmDialog,
   EmptyState,
   Field,
+  Icon,
   IconButton,
   Input,
-  Modal,
   SectionHeader,
   Tag,
-  TextArea,
 } from '../components/ui.jsx';
 
-const QAEditor = ({ questions, onChange }) => {
+const QAEditor = ({ questions, onChange, onTextSelect }) => {
   const setQ = (id, patch) =>
     onChange(questions.map((q) => (q.id === id ? { ...q, ...patch } : q)));
   return (
@@ -35,12 +36,13 @@ const QAEditor = ({ questions, onChange }) => {
               aria-label={`Question ${i + 1}`}
             />
             <div className="qa-label">Response</div>
-            <TextArea
+            <AutoTextArea
               value={q.answer}
               onChange={(v) => setQ(q.id, { answer: v })}
-              rows={4}
+              minRows={4}
               placeholder="Their response, as close to verbatim as possible"
               aria-label={`Response ${i + 1}`}
+              onSelect={onTextSelect}
             />
           </div>
           <IconButton
@@ -60,28 +62,84 @@ const QAEditor = ({ questions, onChange }) => {
   );
 };
 
-const InterviewModal = ({ initial, onSave, onClose }) => {
+// Full-page workspace, not a modal — long verbatim accounts need the room.
+// Fields grow with their content so nothing is read through a letterbox.
+const InterviewEditor = ({ initial, onSave, onAutosave, onCancel, onSendToTimeline }) => {
   const [draft, setDraft] = useState(initial);
+  const [sel, setSel] = useState('');
+  const [sentNote, setSentNote] = useState(false);
+  const [savedAt, setSavedAt] = useState(null);
+  const sentTimer = useRef(null);
   const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
   const setNote = (key) => (value) =>
     setDraft((d) => ({ ...d, notes: { ...d.notes, [key]: value } }));
   const valid = draft.interviewee.trim();
 
-  return (
-    <Modal
-      title={initial.interviewee ? `Interview — ${initial.interviewee}` : 'New interview'}
-      onClose={onClose}
-      width={960}
-      footer={
-        <>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!valid} onClick={() => onSave(draft)}>
-            Save interview
-          </Button>
-        </>
+  // Nothing typed here should ever be lost: the draft autosaves every five
+  // minutes and whenever the editor is left any way other than Discard.
+  const draftRef = useRef(draft);
+  const autosaveRef = useRef(onAutosave);
+  const discardedRef = useRef(false);
+  useEffect(() => {
+    draftRef.current = draft;
+    autosaveRef.current = onAutosave;
+  });
+  useEffect(() => {
+    const tick = setInterval(() => {
+      if (draftRef.current.interviewee.trim()) {
+        autosaveRef.current(draftRef.current);
+        setSavedAt(new Date());
       }
-    >
-      <div className="grid-2">
+    }, 5 * 60 * 1000);
+    return () => {
+      clearInterval(tick);
+      if (!discardedRef.current && draftRef.current.interviewee.trim()) {
+        autosaveRef.current(draftRef.current);
+      }
+    };
+  }, []);
+  const discard = () => {
+    discardedRef.current = true;
+    onCancel();
+  };
+
+  // Track text selections inside the account fields — anything highlighted
+  // can be sent straight to the timeline as a draft entry.
+  const trackSelection = (e) => {
+    const el = e.target;
+    setSel(el.value.slice(el.selectionStart, el.selectionEnd).trim());
+  };
+
+  const sendToTimeline = () => {
+    if (!sel) return;
+    onSendToTimeline(sel, draft.interviewee);
+    setSel('');
+    setSentNote(true);
+    clearTimeout(sentTimer.current);
+    sentTimer.current = setTimeout(() => setSentNote(false), 5000);
+  };
+
+  return (
+    <section className="rise iv-editor">
+      <div className="iv-editor-bar">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="overline">Interview</div>
+          <h2 style={{ fontSize: 21 }}>
+            {draft.interviewee.trim() || 'New interview'}
+          </h2>
+        </div>
+        <span className="iv-autosave">
+          {savedAt
+            ? `Autosaved ${savedAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`
+            : 'Autosaves every 5 minutes'}
+        </span>
+        <Button onClick={discard}>Discard</Button>
+        <Button variant="primary" disabled={!valid} onClick={() => onSave(draft)}>
+          Save interview
+        </Button>
+      </div>
+
+      <div className="grid-2" style={{ marginBottom: 16 }}>
         <Field label="Interviewee">
           <Input value={draft.interviewee} onChange={set('interviewee')} placeholder="Name" />
         </Field>
@@ -107,7 +165,7 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
 
       <Field
         label="Cognitive interview notes"
-        hint="The five phases below follow cognitive-interview practice: build rapport, get an uninterrupted free-recall account, then probe with open questions only."
+        hint="The five phases below follow cognitive-interview practice: build rapport, get an uninterrupted free-recall account, then probe with open questions only. Highlight any passage that pins down a moment in time and send it to the timeline."
       >
         <div>
           {INTERVIEW_PHASES.map((p, i) => (
@@ -124,15 +182,17 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
                   <QAEditor
                     questions={draft.questions}
                     onChange={(qs) => set('questions')(qs)}
+                    onTextSelect={trackSelection}
                   />
                 </div>
               ) : (
-                <TextArea
+                <AutoTextArea
                   value={draft.notes[p.key]}
                   onChange={setNote(p.key)}
-                  rows={p.key === 'freeRecall' ? 10 : 3}
+                  minRows={p.key === 'freeRecall' ? 10 : 2}
                   placeholder={p.key === 'freeRecall' ? 'Their account, in their words…' : ''}
                   aria-label={p.label}
+                  onSelect={trackSelection}
                 />
               )}
             </div>
@@ -144,14 +204,37 @@ const InterviewModal = ({ initial, onSave, onClose }) => {
         label="Key points"
         hint="The facts this interview establishes — these appear on the interview card and in the report."
       >
-        <TextArea
+        <AutoTextArea
           value={draft.keyPoints}
           onChange={set('keyPoints')}
-          rows={3}
+          minRows={3}
           placeholder="One point per line…"
         />
       </Field>
-    </Modal>
+
+      <div className={`sel-bar no-print ${sel || sentNote ? '' : 'idle'}`}>
+        {sentNote && !sel ? (
+          <span className="sb-done">
+            <Icon name="check" size={13} />
+            Added to the timeline as a draft — set its date and time in the
+            Timeline step.
+          </span>
+        ) : sel ? (
+          <>
+            <span className="sb-text">“{sel.length > 90 ? `${sel.slice(0, 90)}…` : sel}”</span>
+            <Button size="sm" variant="primary" icon="clock" onClick={sendToTimeline}>
+              Send to timeline
+            </Button>
+          </>
+        ) : (
+          <span className="sb-idle">
+            <Icon name="clock" size={13} />
+            Highlight any passage of the account with your mouse and it can be
+            sent straight to the timeline as an event.
+          </span>
+        )}
+      </div>
+    </section>
   );
 };
 
@@ -159,7 +242,8 @@ export const InterviewsStep = ({ inv, update }) => {
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
 
-  const save = (item) => {
+  // Upsert without closing — used by the editor's autosave.
+  const autosave = (item) =>
     update((c) => {
       const exists = c.interviews.some((i) => i.id === item.id);
       return {
@@ -169,8 +253,27 @@ export const InterviewsStep = ({ inv, update }) => {
           : [...c.interviews, item],
       };
     });
+
+  const save = (item) => {
+    autosave(item);
     setEditing(null);
   };
+
+  // A highlighted passage becomes a draft timeline entry — dated to the
+  // incident by default, attributed to the interviewee's account.
+  const sendToTimeline = (text, interviewee) =>
+    update((c) => ({
+      ...c,
+      timeline: [
+        ...c.timeline,
+        {
+          ...newTimelineEntry(),
+          date: c.details.occurredOn || '',
+          actor: interviewee ? `${interviewee} (account)` : 'Interview account',
+          text,
+        },
+      ],
+    }));
 
   const saveAsEvidence = (iv) =>
     update((c) => {
@@ -187,6 +290,18 @@ export const InterviewsStep = ({ inv, update }) => {
 
   const isInEvidence = (iv) =>
     inv.evidence.some((e) => e.title === `Interview — ${iv.interviewee}`);
+
+  if (editing) {
+    return (
+      <InterviewEditor
+        initial={editing}
+        onSave={save}
+        onAutosave={autosave}
+        onCancel={() => setEditing(null)}
+        onSendToTimeline={sendToTimeline}
+      />
+    );
+  }
 
   return (
     <section className="rise">
@@ -278,9 +393,6 @@ export const InterviewsStep = ({ inv, update }) => {
         </div>
       )}
 
-      {editing && (
-        <InterviewModal initial={editing} onSave={save} onClose={() => setEditing(null)} />
-      )}
       {toDelete && (
         <ConfirmDialog
           title="Delete interview"

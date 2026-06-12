@@ -588,19 +588,22 @@
 .qa-row {
   display: grid;
   grid-template-columns: 1fr 28px;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--paper);
 }
 .qa-row + .qa-row {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 .qa-row .q-fields {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
+}
+.qa-row .q-fields .qa-label + .input {
+  margin-bottom: 6px;
 }
 .qa-label {
   font-size: 10px;
@@ -901,14 +904,18 @@
   border-radius: 4px;
   color: #fff;
 }
+/* band headings read as structure — small caps, category colour — so the
+   investigator's own words (regular ink on white cards) stand apart */
 .icam-band .band-head .b-label {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 .icam-band .band-head .b-hint {
   font-size: 11.5px;
   color: var(--ink-3);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 .icam-band .band-body {
   padding: 10px;
@@ -950,9 +957,12 @@
   flex: 1;
   min-width: 0;
 }
+.factor-card {
+  background: var(--surface);
+}
 .factor-card .f-text {
-  font-size: 13.5px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
 }
 .factor-card .f-meta {
   display: flex;
@@ -1156,6 +1166,554 @@
 .report-doc .placeholder {
   color: var(--ink-3);
   font-style: italic;
+}
+
+/* ── auto-growing textareas (interview workspace) ──────────── */
+.textarea.auto-grow {
+  overflow: hidden;
+  resize: none;
+}
+
+/* ── ICAM band colour key (replaces the abbreviation badge) ──── */
+.icam-band .band-head .b-bar {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* ── timeline: the incident entry ──────────────────────────── */
+.tl-entry .tl-dot.incident {
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.tl-entry .tl-body.incident {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.tl-incident-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.incident-toggle {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.incident-toggle:hover {
+  border-color: var(--line-strong);
+}
+.incident-toggle.on {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+.incident-toggle input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+.incident-toggle strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.incident-toggle .it-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+/* ── five whys: the limit note ─────────────────────────────── */
+.fw-limit {
+  align-self: flex-start;
+  padding: 10px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ── contribution test dialog ──────────────────────────────── */
+.contrib-q {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.4;
+}
+.contrib-text {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--steel);
+  background: var(--sunken);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* ── hierarchy of control — compact button row ─────────────── */
+.hier-seg {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.hs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.hs-btn:hover {
+  border-color: var(--ink-3);
+}
+.hs-btn.on {
+  color: #fff;
+}
+.hs-btn .hs-rank {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+.hier-desc {
+  margin-top: 7px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.control-nudge {
+  padding: 10px 14px;
+  border-left: 3px solid var(--warn);
+  background: var(--warn-tint);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+/* ── factor coverage — the ICAM → actions bridge ───────────── */
+.factor-coverage {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.factor-coverage .fc-head {
+  padding: 12px 16px;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+}
+.factor-coverage .fc-title {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.factor-coverage .fc-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.factor-coverage .fc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 16px;
+  min-height: 44px;
+}
+.factor-coverage .fc-row + .fc-row {
+  border-top: 1px solid var(--line);
+}
+.factor-coverage .fc-kind {
+  flex: none;
+  width: 200px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.factor-coverage .fc-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.factor-coverage .fc-count {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ok);
+}
+@media (max-width: 900px) {
+  .factor-coverage .fc-kind {
+    display: none;
+  }
+}
+
+/* factor picker in the action editor — quiet, text-led */
+.factor-pick {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.factor-pick .fp-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.factor-pick .fp-row + .fp-row {
+  border-top: 1px solid var(--line);
+}
+.factor-pick .fp-row:hover {
+  background: var(--paper);
+}
+.factor-pick .fp-kind {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  width: 150px;
+}
+.factor-pick .fp-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── controls mix strip ────────────────────────────────────── */
+.controls-mix {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 14px;
+}
+.controls-mix .cm-head {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.controls-mix .cm-bar {
+  display: flex;
+  gap: 2px;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.controls-mix .cm-seg {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 24px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.controls-mix .cm-seg:hover {
+  filter: brightness(1.12);
+}
+.controls-mix .cm-seg.on {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+.controls-mix .cm-seg.dim {
+  opacity: 0.3;
+}
+.controls-mix .cm-showing {
+  font-weight: 600;
+}
+.controls-mix .cm-clear {
+  margin-left: 8px;
+  border: none;
+  background: none;
+  padding: 1px 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--steel);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.controls-mix .cm-clear:hover {
+  color: var(--ink);
+}
+/* spotlight: actions outside the selected tier fall into the background */
+.action-row.backgrounded {
+  opacity: 0.22;
+  filter: grayscale(0.5);
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+.action-row.backgrounded:hover {
+  opacity: 0.65;
+  filter: none;
+}
+.action-row {
+  transition: border-color 0.15s ease, opacity 0.25s ease, filter 0.25s ease;
+}
+.controls-mix .cm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.controls-mix .cm-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.controls-mix .cm-legend span.off {
+  opacity: 0.4;
+}
+.controls-mix .cm-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.controls-mix .cm-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+/* pill text stays neutral ink — only the dot carries the tier colour */
+.hier-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.hier-pill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.chip.wide {
+  max-width: 320px;
+}
+
+/* ── interview full-page editor ────────────────────────────── */
+/* clear the floating "Print this step" control that overlaps the content top */
+.iv-editor {
+  padding-top: 34px;
+}
+.iv-editor-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 12px;
+  margin-bottom: 14px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.sel-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+  animation: rise 0.2s cubic-bezier(0.22, 0.8, 0.36, 1) both;
+}
+.sel-bar .sb-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  color: rgba(246, 244, 239, 0.85);
+}
+.sel-bar .sb-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9fc3a8;
+}
+/* resting state: a quiet, always-visible pointer to the feature */
+.sel-bar.idle {
+  background: var(--sunken);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  animation: none;
+}
+.sel-bar .sb-idle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+.iv-autosave {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── report pre-flight ─────────────────────────────────────── */
+.preflight {
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sunken);
+  margin-bottom: 16px;
+}
+.preflight.all-good {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ok);
+}
+.preflight .pf-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+.preflight ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.preflight li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 3px 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.preflight li.ok {
+  color: var(--ink-3);
+}
+.preflight .pf-ind {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  color: transparent;
+}
+.preflight li.ok .pf-ind {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: #fff;
+}
+.preflight .pf-link {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--steel);
+  cursor: pointer;
+}
+.preflight .pf-link:hover {
+  background: var(--steel-tint);
+}
+
+/* report: the incident row */
+.report-doc tr.r-incident td {
+  background: var(--accent-tint);
+}
+.report-doc .r-incident-tag {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+}
+
+/* ── backup bar (home) ─────────────────────────────────────── */
+.backup-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: -18px 0 22px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.backup-bar .bb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
+.backup-bar strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.backup-bar .bb-link {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--steel);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.backup-bar .bb-link:hover {
+  color: var(--ink);
 }
 
 /* responsive */

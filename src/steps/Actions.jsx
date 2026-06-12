@@ -13,6 +13,7 @@ import {
   ConfirmDialog,
   EmptyState,
   Field,
+  Icon,
   IconButton,
   Input,
   Modal,
@@ -29,7 +30,69 @@ const STATUS_TONE = {
   Complete: 'ok',
 };
 
+// Hierarchy of control, strongest first. Colour is reserved for this scale —
+// it is the one thing on the page colour should mean.
+const HIER_META = {
+  Elimination: {
+    color: '#4f7a5b',
+    desc: 'Remove the hazard entirely — redesign the task, route or place so it cannot happen.',
+  },
+  Substitution: {
+    color: '#6e7f62',
+    desc: 'Swap in something safer — different equipment, material or process.',
+  },
+  'Engineering control': {
+    color: '#44607a',
+    desc: 'Keep people and the hazard apart — guards, interlocks, barriers, ventilation.',
+  },
+  'Administrative control': {
+    color: '#b98a1f',
+    desc: 'Procedures, training, signage — relies on people doing the right thing every time.',
+  },
+  PPE: {
+    color: '#c06b1c',
+    desc: 'Protects one person if everything else fails — the last line, never the first.',
+  },
+};
 
+const WEAK_CONTROLS = ['Administrative control', 'PPE'];
+
+// Compact row of buttons: 1 (strongest) → 5 (weakest). The chosen level's
+// short description appears beneath — one line, not a wall.
+const SHORT_LABEL = {
+  'Engineering control': 'Engineering',
+  'Administrative control': 'Administrative',
+};
+
+const HierarchyPicker = ({ value, onChange }) => (
+  <div>
+    <div className="hier-seg" role="radiogroup" aria-label="Hierarchy of control">
+      {ACTION_HIERARCHY.map((h, i) => (
+        <button
+          key={h}
+          type="button"
+          role="radio"
+          aria-checked={value === h}
+          className={`hs-btn ${value === h ? 'on' : ''}`}
+          style={
+            value === h
+              ? { background: HIER_META[h].color, borderColor: HIER_META[h].color }
+              : undefined
+          }
+          title={HIER_META[h].desc}
+          onClick={() => onChange(value === h ? '' : h)}
+        >
+          <span className="hs-rank">{i + 1}</span>
+          {SHORT_LABEL[h] || h}
+        </button>
+      ))}
+    </div>
+    {value && <div className="hier-desc">{HIER_META[value].desc}</div>}
+  </div>
+);
+
+// The editor reads in investigative order: what you're fixing, then what
+// will be done about it, then how strong the fix is.
 const ActionModal = ({ inv, initial, onSave, onClose }) => {
   const [draft, setDraft] = useState(initial);
   const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
@@ -44,7 +107,7 @@ const ActionModal = ({ inv, initial, onSave, onClose }) => {
     <Modal
       title={initial.title ? 'Edit action' : 'New corrective action'}
       onClose={onClose}
-      width={620}
+      width={680}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -58,6 +121,26 @@ const ActionModal = ({ inv, initial, onSave, onClose }) => {
         </>
       }
     >
+      {factors.length > 0 && (
+        <Field
+          label="What is this action fixing?"
+          hint="Start from the contributing factor — an action that doesn't address one is usually treating a symptom."
+        >
+          <div className="factor-pick">
+            {factors.map((f) => (
+              <label key={f.id} className="fp-row">
+                <input
+                  type="checkbox"
+                  checked={draft.factorIds.includes(f.id)}
+                  onChange={() => toggleFactor(f.id)}
+                />
+                <span className="fp-kind">{ICAM_KINDS[f.kind].tag}</span>
+                <span className="fp-text">{f.text}</span>
+              </label>
+            ))}
+          </div>
+        </Field>
+      )}
       <Field label="Action">
         <Input
           value={draft.title}
@@ -65,6 +148,19 @@ const ActionModal = ({ inv, initial, onSave, onClose }) => {
           placeholder="What will be done — specific and verifiable"
         />
       </Field>
+      <Field
+        label="Hierarchy of control"
+        hint="1 is the strongest control, 5 the weakest — only step down when a stronger one isn't practicable."
+      >
+        <HierarchyPicker value={draft.hierarchy} onChange={set('hierarchy')} />
+      </Field>
+      {WEAK_CONTROLS.includes(draft.hierarchy) && (
+        <div className="control-nudge">
+          Could this hazard be eliminated, substituted, or engineered out
+          instead? If not, say why in the detail — that reasoning belongs in
+          the report.
+        </div>
+      )}
       <Field label="Detail">
         <TextArea value={draft.detail} onChange={set('detail')} rows={2} />
       </Field>
@@ -84,73 +180,119 @@ const ActionModal = ({ inv, initial, onSave, onClose }) => {
           <Select value={draft.status} onChange={set('status')} options={ACTION_STATUS} />
         </Field>
       </div>
-      <Field
-        label="Hierarchy of control"
-        hint="Prefer the top of the hierarchy — elimination beats PPE."
-      >
-        <Select
-          value={draft.hierarchy}
-          onChange={set('hierarchy')}
-          options={ACTION_HIERARCHY}
-          placeholder="Select…"
-        />
-      </Field>
-      {factors.length > 0 && (
-        <Field
-          label="Addresses contributing factors"
-          hint="Every organisational factor should end up with at least one action."
-        >
-          <div
-            style={{
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-sm)',
-              maxHeight: 180,
-              overflowY: 'auto',
-            }}
-          >
-            {factors.map((f) => (
-              <label
-                key={f.id}
-                style={{
-                  display: 'flex',
-                  gap: 9,
-                  alignItems: 'baseline',
-                  padding: '7px 11px',
-                  borderBottom: '1px solid var(--line)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={draft.factorIds.includes(f.id)}
-                  onChange={() => toggleFactor(f.id)}
-                />
-                <span
-                  className="mono"
-                  style={{ fontWeight: 600, fontSize: 10.5, color: ICAM_KINDS[f.kind].color }}
-                >
-                  {ICAM_KINDS[f.kind].short}
-                </span>
-                <span>{f.text}</span>
-              </label>
-            ))}
-          </div>
-        </Field>
-      )}
     </Modal>
+  );
+};
+
+// The bridge from ICAM: every contributing factor, in causal order, with its
+// treatment status. This leads the page — actions exist to answer it.
+const FactorCoverage = ({ inv, onAddFor }) => {
+  const factors = allIcamFactors(inv).filter((f) => f.text.trim());
+  if (!factors.length) return null;
+  return (
+    <div className="factor-coverage">
+      <div className="fc-head">
+        <div className="fc-title">From the ICAM analysis — what needs fixing</div>
+        <div className="fc-sub">
+          Give every factor an action, starting at the top: organisational
+          fixes prevent recurrence, individual ones rarely do.
+        </div>
+      </div>
+      {factors.map((f) => {
+        const acts = inv.actions.filter((a) => a.factorIds.includes(f.id));
+        return (
+          <div key={f.id} className="fc-row">
+            <span className="fc-kind">{ICAM_KINDS[f.kind].tag}</span>
+            <span className="fc-text">{f.text}</span>
+            {acts.length ? (
+              <span className="fc-count">
+                <Icon name="check" size={11} />
+                {acts.length} action{acts.length > 1 ? 's' : ''}
+              </span>
+            ) : (
+              <Button size="sm" variant="ghost" icon="plus" onClick={() => onAddFor(f)}>
+                Add action
+              </Button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// One glance at the spread of controls — strongest on the left. Clicking a
+// segment spotlights its actions in the list below; everything else fades
+// into the background. An all-admin/PPE mix earns a gentle note, not an alarm.
+const ControlsMix = ({ actions, tier, onTier }) => {
+  const classified = actions.filter((a) => a.hierarchy);
+  if (!classified.length) return null;
+  const counts = ACTION_HIERARCHY.map((h) => ({
+    h,
+    n: classified.filter((a) => a.hierarchy === h).length,
+  }));
+  const allWeak = classified.every((a) => WEAK_CONTROLS.includes(a.hierarchy));
+  return (
+    <div className="controls-mix">
+      <div className="cm-head">
+        Controls mix
+        {tier ? (
+          <span className="cm-showing" style={{ color: HIER_META[tier].color }}>
+            {' '}— showing {tier.toLowerCase()} actions only
+            <button className="cm-clear" onClick={() => onTier('')}>
+              show all
+            </button>
+          </span>
+        ) : (
+          <span className="muted">
+            {' '}— stronger controls sit to the left. Click a bar to spotlight its actions.
+          </span>
+        )}
+      </div>
+      <div className="cm-bar">
+        {counts.map(
+          ({ h, n }) =>
+            n > 0 && (
+              <button
+                key={h}
+                type="button"
+                className={`cm-seg ${tier === h ? 'on' : ''} ${tier && tier !== h ? 'dim' : ''}`}
+                style={{ flex: n, background: HIER_META[h].color }}
+                title={`${h}: ${n} action${n > 1 ? 's' : ''}`}
+                aria-pressed={tier === h}
+                onClick={() => onTier(tier === h ? '' : h)}
+              >
+                {n}
+              </button>
+            )
+        )}
+      </div>
+      <div className="cm-legend">
+        {counts.map(({ h, n }) => (
+          <span key={h} className={n ? '' : 'off'}>
+            <i style={{ background: HIER_META[h].color }} />
+            {h}
+          </span>
+        ))}
+      </div>
+      {allWeak && (
+        <div className="cm-note">
+          Every action so far relies on administrative controls or PPE — the
+          weakest rungs of the ladder. Worth one more pass over the factor
+          table for elimination, substitution or engineering opportunities.
+        </div>
+      )}
+    </div>
   );
 };
 
 export const ActionsStep = ({ inv, update }) => {
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
+  const [tier, setTier] = useState('');
 
   const factors = allIcamFactors(inv);
   const factorById = (id) => factors.find((f) => f.id === id);
-  const unaddressedOf = inv.icam.of.filter(
-    (f) => f.text.trim() && !inv.actions.some((a) => a.factorIds.includes(f.id))
-  );
 
   const save = (item) => {
     update((c) => {
@@ -169,7 +311,7 @@ export const ActionsStep = ({ inv, update }) => {
     <section className="rise">
       <SectionHeader
         title="Corrective actions"
-        sub="Actions should address the organisational factors — not just the person. Aim high on the hierarchy of control."
+        sub="Work from the factor list down: every contributing factor gets an action, aimed as high on the hierarchy of control as practicable."
         actions={
           <Button variant="primary" icon="plus" onClick={() => setEditing(newAction())}>
             New action
@@ -177,20 +319,12 @@ export const ActionsStep = ({ inv, update }) => {
         }
       />
 
-      {unaddressedOf.length > 0 && inv.actions.length > 0 && (
-        <div
-          className="card pad"
-          style={{ marginBottom: 14, borderColor: 'var(--warn)', background: 'var(--warn-tint)' }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--warn)' }}>
-            {unaddressedOf.length} organisational factor{unaddressedOf.length > 1 ? 's' : ''} without
-            a corrective action
-          </div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginTop: 3 }}>
-            {unaddressedOf.map((f) => f.text).join(' · ')}
-          </div>
-        </div>
-      )}
+      <FactorCoverage
+        inv={inv}
+        onAddFor={(f) => setEditing({ ...newAction(), factorIds: [f.id] })}
+      />
+
+      <ControlsMix actions={inv.actions} tier={tier} onTier={setTier} />
 
       {inv.actions.length === 0 ? (
         <EmptyState
@@ -206,24 +340,35 @@ export const ActionsStep = ({ inv, update }) => {
       ) : (
         <div className="ev-list">
           {inv.actions.map((a) => (
-            <div key={a.id} className={`action-row ${a.status === 'Complete' ? 'done' : ''}`}>
+            <div
+              key={a.id}
+              className={`action-row ${a.status === 'Complete' ? 'done' : ''} ${
+                tier && a.hierarchy !== tier ? 'backgrounded' : ''
+              }`}
+            >
               <div className="a-main">
                 <div className="a-title">{a.title}</div>
                 {a.detail && <div className="a-detail">{a.detail}</div>}
                 <div className="a-meta">
                   <Tag tone={STATUS_TONE[a.status]}>{a.status}</Tag>
                   {isOverdue(a) && <Tag tone="accent">Overdue</Tag>}
-                  {a.hierarchy && <Tag tone="steel">{a.hierarchy}</Tag>}
+                  {a.hierarchy && (
+                    <span className="hier-pill">
+                      <i style={{ background: HIER_META[a.hierarchy]?.color }} />
+                      {a.hierarchy}
+                    </span>
+                  )}
                   {a.owner && <span>{a.owner}</span>}
                   {a.due && <span>Due {fmtDate(a.due)}</span>}
                   {a.factorIds.map((id) => {
                     const f = factorById(id);
                     return f ? (
-                      <span key={id} className="chip" title={f.text}>
-                        <span className="ref" style={{ color: ICAM_KINDS[f.kind].color }}>
-                          {ICAM_KINDS[f.kind].short}
-                        </span>
-                        <span className="t">{f.text}</span>
+                      <span
+                        key={id}
+                        className="chip wide"
+                        title={`${ICAM_KINDS[f.kind].tag} — ${f.text}`}
+                      >
+                        <span className="t">Fixes: {f.text}</span>
                       </span>
                     ) : null;
                   })}

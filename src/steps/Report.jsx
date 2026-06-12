@@ -6,9 +6,83 @@ import {
   ICAM_ORDER,
   isOverdue,
 } from '../lib/model.js';
-import { Button, Field, Input, SectionHeader, TextArea } from '../components/ui.jsx';
+import { Button, Field, Icon, Input, SectionHeader, TextArea } from '../components/ui.jsx';
+import { useCases } from '../App.jsx';
 
 const sortKey = (t) => `${t.date || '9999-99-99'}T${t.time || '99:99'}`;
+
+// A gentle pre-flight read-through — never blocking, never red. It lists
+// what a reviewer would notice, with a shortcut to the step that fixes it.
+const PreFlight = ({ inv, summaryOk, findingsOk }) => {
+  const { goStep } = useCases();
+  const factors = allIcamFactors(inv);
+  const checks = [
+    { ok: summaryOk, label: 'Executive summary written' },
+    { ok: findingsOk, label: 'Findings listed' },
+  ];
+  if (inv.timeline.length) {
+    checks.push({
+      ok: inv.timeline.some((t) => t.isIncident),
+      label: 'The incident is marked on the timeline',
+      step: 'timeline',
+      stepLabel: 'Timeline',
+    });
+  }
+  if (inv.methods.icam && factors.length) {
+    checks.push({
+      ok: factors.every((f) => f.evidenceIds.length > 0),
+      label: 'Contributing factors are anchored to evidence',
+      step: 'icam',
+      stepLabel: 'ICAM analysis',
+    });
+  }
+  if (inv.methods.icam && inv.icam.of.some((f) => f.text.trim())) {
+    checks.push({
+      ok: inv.icam.of
+        .filter((f) => f.text.trim())
+        .every((f) => inv.actions.some((a) => a.factorIds.includes(f.id))),
+      label: 'Every organisational factor has a corrective action',
+      step: 'actions',
+      stepLabel: 'Actions',
+    });
+  }
+  if (inv.actions.length) {
+    checks.push({
+      ok: inv.actions.every((a) => a.owner.trim() && a.due),
+      label: 'Actions all have an owner and a due date',
+      step: 'actions',
+      stepLabel: 'Actions',
+    });
+  }
+
+  const open = checks.filter((c) => !c.ok);
+  if (!open.length) {
+    return (
+      <div className="preflight all-good no-print">
+        <Icon name="check" size={13} />
+        Everything the report draws on is in place.
+      </div>
+    );
+  }
+  return (
+    <div className="preflight no-print">
+      <div className="pf-title">Worth a look before this goes out</div>
+      <ul>
+        {checks.map((c) => (
+          <li key={c.label} className={c.ok ? 'ok' : ''}>
+            <span className="pf-ind">{c.ok && <Icon name="check" size={10} />}</span>
+            {c.label}
+            {!c.ok && c.step && (
+              <button className="pf-link" onClick={() => goStep(c.step)}>
+                {c.stepLabel} →
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 const Pre = ({ text, placeholder }) =>
   text.trim() ? (
@@ -68,6 +142,12 @@ export const ReportStep = ({ inv, update }) => {
               </Button>
             </>
           }
+        />
+
+        <PreFlight
+          inv={inv}
+          summaryOk={!!r.summary.trim()}
+          findingsOk={findingLines.length > 0}
         />
 
         <div className="grid-2" style={{ marginBottom: 16 }}>
@@ -138,11 +218,14 @@ export const ReportStep = ({ inv, update }) => {
             </thead>
             <tbody>
               {timeline.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} className={t.isIncident ? 'r-incident' : ''}>
                   <td style={{ whiteSpace: 'nowrap' }}>{fmtDate(t.date)}</td>
                   <td>{t.time || '—'}</td>
                   {hasActor && <td style={{ whiteSpace: 'nowrap' }}>{t.actor || '—'}</td>}
-                  <td>{t.text}</td>
+                  <td>
+                    {t.isIncident && <span className="r-incident-tag">Incident — </span>}
+                    {t.text}
+                  </td>
                   <td className="mono" style={{ whiteSpace: 'nowrap' }}>{evRefs(t.evidenceIds) || '—'}</td>
                 </tr>
               ))}
@@ -292,7 +375,7 @@ export const ReportStep = ({ inv, update }) => {
               {ICAM_ORDER.flatMap((k) =>
                 inv.icam[k].map((f) => (
                   <tr key={f.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{ICAM_KINDS[k].short}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{ICAM_KINDS[k].tag}</td>
                     <td>{f.text}</td>
                     <td>{f.rating || '—'}</td>
                     <td className="mono" style={{ whiteSpace: 'nowrap' }}>{evRefs(f.evidenceIds) || '—'}</td>

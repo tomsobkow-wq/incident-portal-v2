@@ -116,11 +116,13 @@ export const IconButton = ({ icon, label, danger, size = 14, ...rest }) => (
 );
 
 // ── form controls ────────────────────────────────────────────
+// Guidance reads top-to-bottom: the hint sits above the control so
+// people get the advice before they start writing, not after.
 export const Field = ({ label, hint, children, className }) => (
   <div className={`field ${className || ''}`.trim()}>
     {label && <label>{label}</label>}
-    {children}
     {hint && <div className="hint">{hint}</div>}
+    {children}
   </div>
 );
 
@@ -142,6 +144,27 @@ export const TextArea = ({ value, onChange, rows = 3, ...rest }) => (
     {...rest}
   />
 );
+
+// Grows with its content so long answers stay fully readable while typing.
+export const AutoTextArea = ({ value, onChange, minRows = 3, ...rest }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      className="textarea auto-grow"
+      rows={minRows}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      {...rest}
+    />
+  );
+};
 
 export const Select = ({ value, onChange, options, placeholder, ...rest }) => (
   <select
@@ -206,22 +229,34 @@ export const Tag = ({ tone, children }) => (
 );
 
 // ── modal ────────────────────────────────────────────────────
+// Stack bookkeeping so nested dialogs (a confirmation on top of an editor)
+// don't steal Escape from each other or unlock body scroll too early.
+const modalStack = [];
+
 export const Modal = ({ title, onClose, footer, width = 560, children }) => {
   const ref = useRef(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
+    const id = {};
+    modalStack.push(id);
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && modalStack[modalStack.length - 1] === id)
+        closeRef.current();
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     const el = ref.current?.querySelector('input, textarea, select, button');
     el?.focus();
     return () => {
+      modalStack.splice(modalStack.indexOf(id), 1);
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      if (!modalStack.length) document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div

@@ -23,18 +23,17 @@ import {
   Tag,
   TextArea,
 } from '../components/ui.jsx';
+import { ContributionDialog } from '../components/ContributionDialog.jsx';
 import { useCases } from '../App.jsx';
 
 const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => {
   const [draft, setDraft] = useState(initial);
-  const [transferKind, setTransferKind] = useState('');
+  const [confirming, setConfirming] = useState(false);
   const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
   const isNew = !inv.peepo.some((p) => p.id === initial.id);
   const transferred =
     draft.factorId &&
     Object.values(inv.icam).some((list) => list.some((f) => f.id === draft.factorId));
-  const kindByLabel = (label) =>
-    ICAM_ORDER.find((k) => ICAM_KINDS[k].label === label) || '';
   return (
     <Modal
       title={`PEEPO — ${draft.category}`}
@@ -99,33 +98,35 @@ const PeepoModal = ({ inv, initial, onSave, onDelete, onTransfer, onClose }) => 
       </Field>
       <Field
         label="Transfer to the ICAM factor table"
-        hint="Apply the contribution test first: would the incident have been prevented, or been less severe, if this had been different? Only then does a finding become a contributing factor — facts that don't pass stay here as context."
+        hint="Findings only become contributing factors after passing the contribution test — you'll be asked to confirm."
       >
         {transferred ? (
           <div>
             <Tag tone="ok">In the ICAM factor table</Tag>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Select
-              value={transferKind ? ICAM_KINDS[transferKind].label : ''}
-              onChange={(label) => setTransferKind(kindByLabel(label))}
-              options={ICAM_ORDER.map((k) => ICAM_KINDS[k].label)}
-              placeholder="Passes the test as a…"
-              aria-label="Factor category"
-            />
+          <div>
             <Button
               variant="subtle"
-              disabled={!transferKind || !(draft.notes.trim() || draft.text.trim())}
-              onClick={() => onTransfer(draft, transferKind)}
-              style={{ flex: 'none' }}
+              disabled={!(draft.notes.trim() || draft.text.trim())}
+              onClick={() => setConfirming(true)}
             >
               <Icon name="link" size={12} />
-              Transfer
+              Apply the contribution test…
             </Button>
           </div>
         )}
       </Field>
+      {confirming && (
+        <ContributionDialog
+          text={draft.notes.trim() || draft.text.trim()}
+          onConfirm={(kind) => {
+            setConfirming(false);
+            onTransfer(draft, kind);
+          }}
+          onClose={() => setConfirming(false)}
+        />
+      )}
     </Modal>
   );
 };
@@ -347,12 +348,16 @@ export const IcamStep = ({ inv, update }) => {
             <div key={kindKey}>
               {i > 0 && <div className="icam-arrow">{ARROW_LABELS[ICAM_ORDER[i - 1]]}</div>}
               <div className="icam-band">
-                <div className="band-head">
-                  <span className="b-short" style={{ background: kind.color }}>
-                    {kind.short}
-                  </span>
+                <div
+                  className="band-head"
+                  style={{ background: `color-mix(in srgb, ${kind.color} 8%, #fff)` }}
+                >
+                  <span className="b-bar" style={{ background: kind.color }} />
                   <div style={{ flex: 1 }}>
-                    <div className="b-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div
+                      className="b-label"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, color: kind.color }}
+                    >
                       {kind.label}
                       <HelpTip title={kind.label} lines={kind.help} />
                     </div>
@@ -369,16 +374,28 @@ export const IcamStep = ({ inv, update }) => {
                 <div className="band-body">
                   {factors.length === 0 ? (
                     <div className="hint" style={{ padding: '4px 6px' }}>
-                      No {kind.short} factors identified yet.
+                      No {kind.label.toLowerCase()} identified yet.
                     </div>
                   ) : (
-                    factors.map((f) => (
+                    factors.map((f) => {
+                      const nActions = inv.actions.filter((a) =>
+                        a.factorIds.includes(f.id)
+                      ).length;
+                      return (
                       <div key={f.id} className="factor-card">
                         <div className="f-main">
                           <div className="f-text">{f.text}</div>
                           <div className="f-meta">
                             {f.rating && <Tag tone="steel">{f.rating}</Tag>}
                             <EvidenceChips inv={inv} ids={f.evidenceIds} />
+                            {f.evidenceIds.length === 0 && (
+                              <Tag tone="warn">No evidence linked yet</Tag>
+                            )}
+                            {nActions > 0 && (
+                              <Tag>
+                                Addressed by {nActions} action{nActions > 1 ? 's' : ''}
+                              </Tag>
+                            )}
                             {kindKey === 'ita' && (
                               <Button size="sm" variant="ghost" onClick={() => analyseInHfat(f)}>
                                 {inv.hfat.some((h) => h.itaId === f.id)
@@ -398,7 +415,8 @@ export const IcamStep = ({ inv, update }) => {
                           />
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

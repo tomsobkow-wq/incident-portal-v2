@@ -147,11 +147,12 @@ export const exportDocx = async (inv) => {
           hasActor
             ? ['Date', 'Time', 'Actor', 'Event', 'Evidence']
             : ['Date', 'Time', 'Event', 'Evidence'],
-          timeline.map((t) =>
-            hasActor
-              ? [fmtDate(t.date), t.time, t.actor, t.text, evRefs(t.evidenceIds)]
-              : [fmtDate(t.date), t.time, t.text, evRefs(t.evidenceIds)]
-          )
+          timeline.map((t) => {
+            const text = t.isIncident ? `INCIDENT — ${t.text}` : t.text;
+            return hasActor
+              ? [fmtDate(t.date), t.time, t.actor, text, evRefs(t.evidenceIds)]
+              : [fmtDate(t.date), t.time, text, evRefs(t.evidenceIds)];
+          })
         )
       : para('No timeline entries.', { muted: true, italics: true })
   );
@@ -243,7 +244,7 @@ export const exportDocx = async (inv) => {
       ? table(
           ['Category', 'Factor', 'Classification', 'Evidence'],
           ICAM_ORDER.flatMap((k) =>
-            inv.icam[k].map((f) => [ICAM_KINDS[k].short, f.text, f.rating, evRefs(f.evidenceIds)])
+            inv.icam[k].map((f) => [ICAM_KINDS[k].tag, f.text, f.rating, evRefs(f.evidenceIds)])
           )
         )
       : para('No ICAM factors recorded.', { muted: true, italics: true })

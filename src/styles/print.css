@@ -92,4 +92,12 @@
     -webkit-line-clamp: unset;
     overflow: visible;
   }
+
+  /* the incident row keeps its emphasis even on monochrome printers */
+  .report-doc tr.r-incident td {
+    background: #f7e8e2 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: 600;
+  }
 }

@@ -69,6 +69,20 @@ const TimelineModal = ({ inv, initial, onSave, onClose }) => {
           placeholder="One event per entry — factual, specific, time-anchored."
         />
       </Field>
+      <label className={`incident-toggle ${draft.isIncident ? 'on' : ''}`}>
+        <input
+          type="checkbox"
+          checked={!!draft.isIncident}
+          onChange={(e) => set('isIncident')(e.target.checked)}
+        />
+        <span>
+          <strong>This entry is the incident itself</strong>
+          <span className="it-hint">
+            Shown in a distinct colour on the timeline and highlighted in the
+            report — everything else reads as before or after it.
+          </span>
+        </span>
+      </label>
       <Field label="Supporting evidence">
         <EvidencePicker inv={inv} value={draft.evidenceIds} onChange={set('evidenceIds')} />
       </Field>
@@ -92,14 +106,18 @@ export const TimelineStep = ({ inv, update }) => {
     else moments.push({ key, date: t.date, time: t.time, items: [t] });
   }
 
+  // Only one entry can be the incident — marking one unmarks the rest.
   const save = (item) => {
     update((c) => {
       const exists = c.timeline.some((t) => t.id === item.id);
+      const others = item.isIncident
+        ? (t) => ({ ...t, isIncident: false })
+        : (t) => t;
       return {
         ...c,
         timeline: exists
-          ? c.timeline.map((t) => (t.id === item.id ? item : t))
-          : [...c.timeline, item],
+          ? c.timeline.map((t) => (t.id === item.id ? item : others(t)))
+          : [...c.timeline.map(others), item],
       };
     });
     setEditing(null);
@@ -109,7 +127,7 @@ export const TimelineStep = ({ inv, update }) => {
     <section className="rise">
       <SectionHeader
         title="Timeline"
-        sub="Reconstruct the sequence of events. Entries with the same time sit side by side as parallel strands — anchor each to evidence."
+        sub="Reconstruct the sequence of events, then mark one entry as the incident itself — it becomes the anchor everything sits before or after."
         actions={
           <Button variant="primary" icon="plus" onClick={() => setEditing(newTimelineEntry())}>
             Add entry
@@ -130,44 +148,48 @@ export const TimelineStep = ({ inv, update }) => {
         />
       ) : (
         <div className="tl">
-          {moments.map((m) => (
-            <div key={m.key + m.items[0].id} className="tl-entry">
-              <div className="tl-when">
-                <div className="tl-time">{m.time || '—'}</div>
-                <div className="tl-date">{fmtDate(m.date)}</div>
-              </div>
-              <div className="tl-axis">
-                <div className="tl-dot" />
-              </div>
-              <div className="tl-parallel">
-                {m.items.map((t) => (
-                  <div key={t.id} className="tl-body">
-                    {m.items.length > 1 && (
-                      <div className="tl-parallel-tag">In parallel</div>
-                    )}
-                    {t.actor && <div className="tl-actor">{t.actor}</div>}
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <div className="tl-text" style={{ flex: 1 }}>
-                        {t.text}
+          {moments.map((m) => {
+            const hasIncident = m.items.some((t) => t.isIncident);
+            return (
+              <div key={m.key + m.items[0].id} className="tl-entry">
+                <div className="tl-when">
+                  <div className="tl-time">{m.time || '—'}</div>
+                  <div className="tl-date">{fmtDate(m.date)}</div>
+                </div>
+                <div className="tl-axis">
+                  <div className={`tl-dot ${hasIncident ? 'incident' : ''}`} />
+                </div>
+                <div className="tl-parallel">
+                  {m.items.map((t) => (
+                    <div key={t.id} className={`tl-body ${t.isIncident ? 'incident' : ''}`}>
+                      {t.isIncident && <div className="tl-incident-tag">Incident</div>}
+                      {m.items.length > 1 && (
+                        <div className="tl-parallel-tag">In parallel</div>
+                      )}
+                      {t.actor && <div className="tl-actor">{t.actor}</div>}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                        <div className="tl-text" style={{ flex: 1 }}>
+                          {t.text}
+                        </div>
+                        <IconButton icon="pencil" label="Edit" onClick={() => setEditing(t)} />
+                        <IconButton
+                          icon="trash"
+                          label="Delete"
+                          danger
+                          onClick={() => setToDelete(t)}
+                        />
                       </div>
-                      <IconButton icon="pencil" label="Edit" onClick={() => setEditing(t)} />
-                      <IconButton
-                        icon="trash"
-                        label="Delete"
-                        danger
-                        onClick={() => setToDelete(t)}
-                      />
+                      {t.evidenceIds.length > 0 && (
+                        <div className="tl-extra">
+                          <EvidenceChips inv={inv} ids={t.evidenceIds} />
+                        </div>
+                      )}
                     </div>
-                    {t.evidenceIds.length > 0 && (
-                      <div className="tl-extra">
-                        <EvidenceChips inv={inv} ids={t.evidenceIds} />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

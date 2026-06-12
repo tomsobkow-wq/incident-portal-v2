@@ -54,7 +54,7 @@ const HfatCard = ({ inv, entry, onChange, onDelete }) => {
         <div className="h-title">
           {entry.actionError.description || entry.actionError.type || 'New analysis'}
         </div>
-        {ita && <Tag tone="warn">Linked ITA</Tag>}
+        {ita && <Tag tone="warn">Linked to ICAM action</Tag>}
         <IconButton icon="trash" label="Delete analysis" danger onClick={onDelete} />
       </div>
 
@@ -68,7 +68,11 @@ const HfatCard = ({ inv, entry, onChange, onDelete }) => {
                 set({ itaId: inv.icam.ita.find((f) => f.text === text)?.id || '' })
               }
               options={itaOptions}
-              placeholder={itaOptions.length ? 'Select ITA factor…' : 'No ITA factors yet'}
+              placeholder={
+                itaOptions.length
+                  ? 'Select individual/team action…'
+                  : 'No individual/team actions yet'
+              }
             />
           </Field>
           <Field label="Error type">
@@ -215,7 +219,7 @@ export const HfatStep = ({ inv, update }) => {
         <EmptyState
           icon="box"
           title="No human-factors analyses yet"
-          hint="Analyse each significant individual/team action — start from an ITA factor in the ICAM step, or create one here."
+          hint="Analyse each significant individual/team action — start from one in the ICAM factor table, or create an analysis here."
           action={
             <Button variant="primary" icon="plus" onClick={add}>
               Start an analysis

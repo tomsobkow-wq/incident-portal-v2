@@ -57,6 +57,72 @@ const NewCaseModal = ({ onClose }) => {
   );
 };
 
+// Quiet one-liner about where the data lives — and a one-click way to
+// mirror it to a folder on the local drive (plain JSON, fully transparent).
+const BackupBar = () => {
+  const { cases, backup, backupSupported, connectBackup, reconnectBackup, disconnectBackup } =
+    useCases();
+  if (!cases.length) return null;
+
+  if (!backupSupported) {
+    return (
+      <div className="backup-bar">
+        Data lives in this browser only — use the download button on each
+        investigation to keep file copies.
+      </div>
+    );
+  }
+  if (backup.status === 'connected') {
+    return (
+      <div className="backup-bar on">
+        <span className="bb-dot" />
+        Backing up to <strong>{backup.folder}</strong> on this device
+        {backup.lastSaved && (
+          <span className="muted">
+            — last saved{' '}
+            {new Date(backup.lastSaved).toLocaleTimeString(undefined, {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        )}
+        <button className="bb-link" onClick={disconnectBackup}>
+          stop
+        </button>
+      </div>
+    );
+  }
+  if (backup.status === 'reconnect') {
+    return (
+      <div className="backup-bar">
+        Backup folder <strong>{backup.folder}</strong> needs a one-click
+        re-confirmation after the browser restarted.
+        <button className="bb-link" onClick={reconnectBackup}>
+          Reconnect
+        </button>
+      </div>
+    );
+  }
+  if (backup.status === 'error') {
+    return (
+      <div className="backup-bar">
+        Couldn&apos;t write to the backup folder — it may have moved.
+        <button className="bb-link" onClick={connectBackup}>
+          Choose folder again
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="backup-bar">
+      Data lives in this browser only.
+      <button className="bb-link" onClick={connectBackup}>
+        Back up to a folder on this device
+      </button>
+    </div>
+  );
+};
+
 export const CaseList = () => {
   const { cases, openCase, deleteCase, importCase } = useCases();
   const [creating, setCreating] = useState(false);
@@ -107,6 +173,7 @@ export const CaseList = () => {
           }}
         />
       </header>
+      <BackupBar />
       {importError && (
         <div
           className="card pad rise"
